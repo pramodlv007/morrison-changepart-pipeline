@@ -166,6 +166,16 @@
   .ctl.open .help{display:block}
   .qmark{border:none;background:var(--glass2);color:var(--ink3);width:17px;height:17px;border-radius:50%;font-size:10.5px;font-weight:800;cursor:pointer;line-height:1}
   .qmark:hover{color:var(--ink)}
+  .adv{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+  .adv summary{font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+  .adv summary::-webkit-details-marker{display:none}
+  .adv summary::before{content:"▸";transition:.2s;color:var(--ink3)}
+  .adv[open] summary::before{transform:rotate(90deg)}
+  .adv summary:hover{color:var(--ink)}
+  .adv .note{font-size:11.5px;color:var(--ink3);margin:10px 0 16px;line-height:1.5;padding:9px 12px;border-radius:10px;background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.22)}
+  .adv .grp{font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink3);font-weight:800;margin:16px 0 11px}
+  select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:10px 12px;font:inherit;font-size:13.5px;cursor:pointer}
+  select:focus{outline:none;border-color:var(--blue)}
   .verdict{border-radius:15px;padding:15px 17px;margin-top:4px;border:1px solid var(--line2);background:var(--glass);transition:.25s}
   .verdict.ok{border-color:rgba(61,219,184,.36);background:rgba(61,219,184,.1)}
   .verdict.bad{border-color:rgba(255,107,133,.36);background:rgba(255,107,133,.1)}
@@ -596,14 +606,25 @@ function downloadDrawing(){
 /* =============================================================
    Configurator — every change re-checked by the real engine
    ============================================================= */
+function allControls(){
+  const a=P.advanced||{};
+  return [...(P.controls||[]),...(a.geometry||[]),...(a.context||[])];
+}
 function setParam(k,v){
   EDIT[k]=v;
-  const c=(P.controls||[]).find(x=>x.k===k);
+  const c=allControls().find(x=>x.k===k)||{k,step:1};
   const el=document.getElementById('val_'+k);
   if(el){el.textContent=fmtCtl(c,v);el.classList.toggle('changed',v!==BASE[k]);}
+  const sl=document.getElementById('sl_'+k);if(sl&&+sl.value!==+v)sl.value=v;
   if(!rebuildQueued){rebuildQueued=true;requestAnimationFrame(()=>{rebuildQueued=false;rebuild(false);});}
   renderDiff();
   scheduleCheck();
+}
+/* machine / ovality selects — same knobs the engineering Stage 5 form has */
+function setChoice(k,v){
+  EDIT[k]=(k==='ovality_mm')?parseFloat(v):v;
+  renderDiff();scheduleCheck();
+  if(k==='ovality_mm'&&!rebuildQueued)return;   // ovality is not geometry, no rebuild needed
 }
 function fmtCtl(c,v){return (c&&c.step<1?(+v).toFixed(2):(+v).toFixed(0))+(/_mm$/.test(c.k)?' mm':(/_deg$/.test(c.k)?'°':''));}
 function setMaterial(m){
@@ -613,7 +634,10 @@ function setMaterial(m){
 }
 function changedEntries(){
   return Object.keys(EDIT).filter(k=>String(EDIT[k])!==String(BASE[k]))
-    .map(k=>({k,from:BASE[k],to:EDIT[k],label:(P.controls||[]).find(c=>c.k===k)?(P.controls||[]).find(c=>c.k===k).l:(FIELD_WORDS[k]||k)}));
+    .map(k=>{
+      const c=allControls().find(x=>x.k===k);
+      return{k,from:BASE[k],to:EDIT[k],label:c?c.l:(FIELD_WORDS[k]||k.replace(/_mm$|_deg$/,'').replace(/_/g,' '))};
+    });
 }
 function renderDiff(){
   const el=document.getElementById('diff');if(!el)return;
@@ -627,10 +651,11 @@ function renderDiff(){
 }
 function resetEdits(){
   EDIT={};
-  (P.controls||[]).forEach(c=>{
-    const s=document.getElementById('sl_'+c.k);if(s){s.value=BASE[c.k];}
-    const v=document.getElementById('val_'+c.k);if(v){v.textContent=fmtCtl(c,BASE[c.k]);v.classList.remove('changed');}
+  allControls().forEach(c=>{
+    const s=document.getElementById('sl_'+c.k);if(s&&BASE[c.k]!=null){s.value=BASE[c.k];}
+    const v=document.getElementById('val_'+c.k);if(v&&BASE[c.k]!=null){v.textContent=fmtCtl(c,BASE[c.k]);v.classList.remove('changed');}
   });
+  ['machine_id','ovality_mm'].forEach(k=>{const s=document.getElementById('ch_'+k);if(s&&BASE[k]!=null)s.value=BASE[k];});
   document.querySelectorAll('[data-mat]').forEach(b=>b.classList.toggle('on',b.dataset.mat===BASE.material_id));
   rebuild(false);renderDiff();scheduleCheck();
   toast('Back to our design');
@@ -727,17 +752,38 @@ function render(){
   const ctx=['material_id','machine_id','target_speed_cpm','bottle_diameter_mm','bottle_height_mm']
     .filter(k=>d[k]!=null).map(k=>`<div><span class="k">${esc(FIELD_WORDS[k]||k)}</span><span class="v">${esc(fmt(k,d[k]))}</span></div>`).join('');
 
-  const controls=(P.controls||[]).filter(c=>d[c.k]!=null).map(c=>`
+  const sliderHTML=(c)=>`
     <div class="ctl" id="ctl_${esc(c.k)}">
       <div class="ctl-top">
-        <span class="ctl-l">${esc(c.l)} <button class="qmark" onclick="document.getElementById('ctl_${esc(c.k)}').classList.toggle('open')" title="What is this?">?</button></span>
+        <span class="ctl-l">${esc(c.l)}${c.help?` <button class="qmark" onclick="document.getElementById('ctl_${esc(c.k)}').classList.toggle('open')" title="What is this?">?</button>`:''}</span>
         <span class="ctl-v" id="val_${esc(c.k)}">${esc(fmtCtl(c,d[c.k]))}</span>
       </div>
       <input type="range" id="sl_${esc(c.k)}" min="${c.min}" max="${c.max}" step="${c.step}" value="${d[c.k]}"
              oninput="setParam('${esc(c.k)}',parseFloat(this.value))" />
-      <div class="ends"><span>${esc(c.lo||'')}</span><span>${esc(c.hi||'')}</span></div>
-      <div class="help">${esc(c.help||'')}</div>
-    </div>`).join('');
+      ${c.lo||c.hi?`<div class="ends"><span>${esc(c.lo||'')}</span><span>${esc(c.hi||'')}</span></div>`:''}
+      ${c.help?`<div class="help">${esc(c.help)}</div>`:''}
+    </div>`;
+
+  const controls=(P.controls||[]).filter(c=>d[c.k]!=null).map(c=>sliderHTML(c)).join('');
+
+  const adv=P.advanced||{};
+  const advGeom=(adv.geometry||[]).filter(c=>d[c.k]!=null).map(c=>sliderHTML(c)).join('');
+  const advCtx=(adv.context||[]).filter(c=>d[c.k]!=null).map(c=>sliderHTML(c)).join('');
+  const advMachine=(adv.machines||[]).length?`<div class="ctl"><div class="ctl-top"><span class="ctl-l">Machine</span></div>
+      <select id="ch_machine_id" onchange="setChoice('machine_id',this.value)">
+        ${(adv.machines||[]).map(m=>`<option value="${esc(m)}"${m===d.machine_id?' selected':''}>${esc(m)}</option>`).join('')}
+      </select></div>`:'';
+  const advOval=(adv.ovalities||[]).length?`<div class="ctl"><div class="ctl-top"><span class="ctl-l">Container ovality tolerance</span></div>
+      <select id="ch_ovality_mm" onchange="setChoice('ovality_mm',this.value)">
+        ${(adv.ovalities||[]).map(o=>`<option value="${o.v}"${String(o.v)===String(d.ovality_mm)?' selected':''}>${esc(o.l)}</option>`).join('')}
+      </select></div>`:'';
+  const advanced=(advGeom||advCtx||advMachine||advOval)?`
+    <details class="adv">
+      <summary>Advanced — every parameter</summary>
+      <div class="note">These are the same controls your Morrison engineer uses. Changing them is fine — nothing is sent until you press “Request these changes”, and every change is still checked against your machine.</div>
+      ${advGeom?`<div class="grp">Geometry</div>${advGeom}`:''}
+      ${advCtx||advMachine||advOval?`<div class="grp">Your line</div>${advCtx}${advMachine}${advOval}`:''}
+    </details>`:'';
 
   const mats=(P.materials||[]).map(m=>{
     const i=MAT_INFO[m]||{c:'#dde',d:''};
@@ -816,6 +862,7 @@ function render(){
         ${controls||'<p class="muted">No adjustable options on this part.</p>'}
         <div style="font-size:14px;font-weight:700;margin:22px 0 11px">Material</div>
         <div class="swatches">${mats}</div>
+        ${advanced}
         <div class="verdict" id="verdict" style="margin-top:20px"></div>
         <div class="diff" id="diff"></div>
         <button class="btn sm" id="resetbtn" style="display:none;margin-top:14px" onclick="resetEdits()">↺ Back to our design</button>

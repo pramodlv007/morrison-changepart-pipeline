@@ -1195,7 +1195,14 @@ async function runFeedbackLoop(){
 /* ============================================================
    CUSTOMER HAND-OFF  (customer.html)  — allowlist, never cost / tolerances / scores
    ============================================================ */
-const CUSTOMER_ALLOWED=['part_type','material_id','machine_id','target_speed_cpm','bottle_diameter_mm','bottle_height_mm'];
+const CUSTOMER_ALLOWED=['part_type','material_id','machine_id','target_speed_cpm','bottle_diameter_mm','bottle_height_mm','ovality_mm'];
+/* Operating context the customer page can expose under "Advanced" — the same knobs the
+   Stage 5 form has here, minus anything internal. */
+const CONTEXT_CONTROLS=[
+  {k:'target_speed_cpm',l:'Line speed (containers/min)',min:100,max:800,step:10},
+  {k:'bottle_diameter_mm',l:'Container diameter (mm)',min:30,max:120,step:1},
+  {k:'bottle_height_mm',l:'Container height (mm)',min:80,max:350,step:5}
+];
 function customerPayload(){
   const type=CAD_STATE.type,T=PART_TYPES[type],d=designFromState(),res=validateDesign(d);
   const design={};for(const k of [...Object.keys(T.defaults),...CUSTOMER_ALLOWED])if(k in d)design[k]=d[k];
@@ -1207,9 +1214,17 @@ function customerPayload(){
      learning) are internal and would just add noise. */
   const CUSTOMER_STAGES=[1,2,3,4,5,6,7];
   const stages=CUSTOMER_STAGES.map(id=>{const el=document.getElementById('ss-'+id);return{id:String(id),name:STAGES[id].nm,status:el?el.className.replace('sstat ','').replace('st-',''):'rdy'};});
+  const custKeys=new Set((T.customerControls||[]).map(c=>c.k));
   return{version:2,generatedAt:new Date().toISOString(),part_type:type,label:T.label,summary:T.summary||'',design,dims,
     controls:T.customerControls||[],hotspots:T.hotspots||[],
     materials:Object.keys(MAT).filter(m=>MAT[m].ok),
+    /* Everything the engineering viewer exposes, for the customer page's Advanced panel */
+    advanced:{
+      geometry:(T.sliders||[]).filter(s=>!custKeys.has(s.k)),
+      context:CONTEXT_CONTROLS.filter(c=>!custKeys.has(c.k)),
+      machines:Object.keys(MAC),
+      ovalities:Object.entries(OV).map(([k,v])=>({l:k.replace(/_/g,' ')+' ('+v+' mm)',v}))
+    },
     verdict:res.verdict,issues:res.reasons,checks:Object.entries(res.checks).map(([k,v])=>({name:k,pass:v.pass})),
     open_questions:[...new Set(questions)],history:PIPELINE_STATE.history,stages,svg:svg2D(true),
     branch:PIPELINE_STATE.chosenBranch?{id:PIPELINE_STATE.chosenBranch.branch_id||'',rationale:PIPELINE_STATE.chosenBranch.rationale||''}:null,

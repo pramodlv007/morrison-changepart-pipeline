@@ -5,3 +5,4 @@ node_modules/
 *.step
 output.step
 .pytest_cache/
+package-lock.json

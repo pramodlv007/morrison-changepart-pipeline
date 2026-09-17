@@ -103,12 +103,41 @@ test_stage5_validation.py 23 regression tests incl. real OCCT solid checks
 stage*_*.ipynb            per-stage model comparison notebooks
 ```
 
+## The customer page
+
+`/customer` is the two-audience split from Stage 6, made interactive. A dark
+studio viewer with orbit, preset camera flights, exploded view, container
+ghosts and hotspots that explain each feature where it physically is.
+
+It is a configurator, not a read-only page: sliders and material swatches
+rebuild the model live, and every change is re-checked by the **same Python
+engine** the engineers use (`POST /api/validate`) — a safe change reports
+"this will run on your line", an unsafe one says what would go wrong in plain
+words. An **Advanced** panel exposes every parameter the engineering viewer
+has (all geometry, machine, line speed, container size, ovality) for customers
+who want them; the simple view stays the default. Changes travel back as
+structured adjustments and land in the engineer's Stage 7.
+
+What crosses to the customer is an explicit allowlist — cost, tolerances,
+weighted scores and rankings never do.
+
 ## Tests
 
 ```bash
-python -m pytest test_stage5_validation.py -q
+python -m pytest test_stage5_validation.py -q      # deterministic engine, 23 tests
+
+python serve.py                                    # in another terminal
+npm install puppeteer-core --no-save
+node tests/ui_tests.js                             # browser regression, 45 checks
 ```
 
-Covers the published starwheel accept/reject cases, every feed-screw and
-guide-rail rule, the trig-vs-Euclidean cross-check, and real CadQuery solids
-(helix volume, annular-sector volume vs analytic).
+The Python suite covers the published starwheel accept/reject cases, every
+feed-screw and guide-rail rule, the trig-vs-Euclidean cross-check, and real
+CadQuery solids (helix volume, annular-sector volume vs analytic).
+
+The browser suite drives real Chrome against both pages: validators and their
+Python cross-check, per-part 3D/2D geometry, cross-stage chaining, feedback-loop
+routing and the computed repair hints, the customer configurator (including the
+advanced panel and the allowlist), and registry extensibility via a drop-in part
+file it creates and removes itself. LLM stages are excluded — they need a warm
+Ollama and minutes per call.
