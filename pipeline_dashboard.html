@@ -971,6 +971,8 @@ function applyRegistry(reg){
       defaults:{...(p.defaults||{})},
       sliders:p.sliders||[],
       customerDims:p.customer_dimensions||[],
+      customerControls:p.customer_controls||[],
+      hotspots:p.hotspots||[],
       branchFields:p.branch_fields||[],
       cadHint:p.cad_hint||'',
       cadChecks:(p.cad_checks||[]).map(c=>[new RegExp(c.pattern,c.flags||''),c.label])
@@ -1073,6 +1075,63 @@ function classifyFailure(res){
   const specLevel=failing.some(([k,v])=>/Food-Contact|Speed Within Machine Limit/.test(k)||/not in catalog|no screw-drive data|no torque rating/.test(v.reason||''));
   return{route:specLevel?'stage1':'stage3',failing};
 }
+/* The deterministic engine knows the algebra, so it hands Stage 3 the corrective
+   RANGE rather than hoping the model inverts the formula itself. Without this a
+   small model walks the value the wrong way and the loop never converges. */
+function repairHints(res,d){
+  const h=[],ov=num(d.ovality_mm,0.6),bd=num(d.bottle_diameter_mm,54),floor=LIM.effClrMin;
+  const fail=k=>res.checks[k]&&!res.checks[k].pass;
+  if(res.type==='starwheel'){
+    if(fail('Effective Clearance > 0.20 mm')){
+      const min=floor+ov/2;
+      h.push(`pocket_clearance_mm must be MORE than ${r2(min)} (c_eff = pocket_clearance_mm − ovality/2 = pocket_clearance_mm − ${ov}/2 must exceed ${floor}). It is currently ${d.pocket_clearance_mm} — INCREASE it, e.g. to ${r2(min+0.3)}.`);
+    }
+    if(fail('Web Thickness ≥ 8.0 mm')||fail('Geometry Valid (web > 0)')){
+      const maxR=(num(d.pcd_mm,620)*Math.sin(Math.PI/num(d.pocket_count,16))-LIM.webMin)/2;
+      h.push(`pocket_radius_mm must be AT MOST ${r2(maxR)} (web = PCD×sin(π/N) − 2r must be ≥ ${LIM.webMin}). It is currently ${d.pocket_radius_mm} — DECREASE it.`);
+    }
+  }
+  if(res.type==='feed_screw'){
+    const ft=num(d.flight_thickness_mm,10);
+    if(fail('Effective Pocket Clearance > 0.20 mm')){
+      const minPitch=bd+ft+floor+ov/2;
+      h.push(`pitch_mm must be MORE than ${r2(minPitch)} (pocket = pitch − flight_thickness; pocket − bottle_⌀ − ovality/2 must exceed ${floor}). It is currently ${d.pitch_mm} — INCREASE it, e.g. to ${r2(minPitch+3)}.`);
+    }
+    if(fail('Pocket Clearance ≤ 6.0 mm (timing)')){
+      h.push(`pitch_mm must be AT MOST ${r2(bd+ft+LIM.screw.maxClr)} — DECREASE it (currently ${d.pitch_mm}).`);
+    }
+    if(fail('Screw RPM Within Drive Limit')){
+      const m=MAC[d.machine_id]||{},need=m.screwRpm?Math.ceil(num(d.target_speed_cpm,380)/m.screwRpm):2;
+      h.push(`starts must be AT LEAST ${need} (screw rpm = target_speed_cpm / starts must be ≤ ${m.screwRpm||'the drive limit'}). It is currently ${d.starts} — INCREASE it.`);
+    }
+    if(fail('Flight Engagement ≥ 20% of bottle ⌀')){
+      const minOD=num(d.root_diameter_mm,90)+2*LIM.screw.minEngage*bd;
+      h.push(`outer_diameter_mm must be AT LEAST ${r2(minOD)} (flight depth = (OD − root)/2 must be ≥ ${LIM.screw.minEngage*100}% of the ${bd} mm bottle). It is currently ${d.outer_diameter_mm} — INCREASE it (or decrease root_diameter_mm).`);
+    }
+    if(fail('Bottles Engaged ≥ 3')){
+      h.push(`length_mm must be AT LEAST ${r2(LIM.screw.minBottles*num(d.pitch_mm,80))} (floor(length/pitch) must be ≥ ${LIM.screw.minBottles}). It is currently ${d.length_mm} — INCREASE it.`);
+    }
+    if(fail('Flight Thickness ≥ 6.0 mm'))h.push(`flight_thickness_mm must be AT LEAST ${LIM.screw.minFlight} — INCREASE it (currently ${ft}).`);
+  }
+  if(res.type==='guide_rail'){
+    const pcd=num(d.mating_pcd_mm,620),base=pcd/2+bd/2;
+    if(fail('Effective Running Gap > 0.20 mm')||fail('Geometry Valid (gap > 0)')){
+      h.push(`rail_radius_mm must be MORE than ${r2(base+floor+ov/2)} (gap = rail_radius_mm − PCD/2 − bottle_⌀/2 = rail_radius_mm − ${r2(base)}; gap − ovality/2 must exceed ${floor}). It is currently ${d.rail_radius_mm} — INCREASE it.`);
+    }
+    if(fail('Running Gap ≤ 5.0 mm')){
+      h.push(`rail_radius_mm must be AT MOST ${r2(base+LIM.rail.maxGap)} — DECREASE it (currently ${d.rail_radius_mm}).`);
+    }
+    if(fail('Arc Angle 20–180°'))h.push(`arc_angle_deg must be between ${LIM.rail.minArc} and ${LIM.rail.maxArc} — currently ${d.arc_angle_deg}.`);
+    if(fail('Contact Height on Bottle Body (25–75% H)')){
+      const bh=num(d.bottle_height_mm,CONTAINER.heightMm);
+      h.push(`contact_height_mm must be between ${r1(LIM.rail.band[0]*bh)} and ${r1(LIM.rail.band[1]*bh)} for a ${bh} mm container — currently ${d.contact_height_mm}.`);
+    }
+    if(fail('Rail Thickness ≥ 6.0 mm'))h.push(`thickness_mm must be AT LEAST ${LIM.rail.minThick} — currently ${d.thickness_mm}.`);
+    if(fail('Rail Height ≥ 15 mm'))h.push(`rail_height_mm must be AT LEAST ${LIM.rail.minHeight} — currently ${d.rail_height_mm}.`);
+  }
+  return h;
+}
+
 function feedbackPacket(res,design,iter){
   const T=PART_TYPES[res.type]||{label:design.part_type};
   const lines=Object.entries(res.checks).filter(([k,v])=>!v.pass).map(([k,v])=>`- ${k}: ${v.reason}${v.cit?' ['+v.cit+']':''}`);
@@ -1085,7 +1144,12 @@ function feedbackPacket(res,design,iter){
     res.type==='guide_rail'?`running gap <= ${LIM.rail.maxGap} mm, arc ${LIM.rail.minArc}-${LIM.rail.maxArc} degrees, contact height 25-75% of bottle height`:null,
     `approved food-contact materials: ${Object.keys(MAT).filter(k=>MAT[k].ok).join(', ')}`].filter(Boolean);
   const rejected=Object.fromEntries(Object.entries(design).filter(([k,v])=>typeof v!=='object'));
-  return `VALIDATION FEEDBACK - attempt ${iter} was REJECTED by the deterministic Stage 5 gate for this ${T.label}:\n${lines.join('\n')}\nRejected values: ${JSON.stringify(rejected)}\nHard limits: ${limits.join('; ')}.\nPropose branches that fix EVERY failed check without breaking another. Do not repeat the rejected values.`;
+  const hints=repairHints(res,design);
+  return `VALIDATION FEEDBACK - attempt ${iter} was REJECTED by the deterministic Stage 5 gate for this ${T.label}:\n${lines.join('\n')}\n`
+    +`Rejected values: ${JSON.stringify(rejected)}\n`
+    +(hints.length?`REQUIRED CORRECTIONS (computed exactly - follow these literally):\n${hints.map(x=>'- '+x).join('\n')}\n`:'')
+    +`Hard limits: ${limits.join('; ')}.\n`
+    +`Propose branches that satisfy EVERY required correction above without breaking another check. Do not repeat the rejected values, and do not move a value in the opposite direction to the one stated.`;
 }
 function stage1FeedbackAddendum(){
   const fb=PIPELINE_STATE.feedback;
@@ -1143,7 +1207,9 @@ function customerPayload(){
      learning) are internal and would just add noise. */
   const CUSTOMER_STAGES=[1,2,3,4,5,6,7];
   const stages=CUSTOMER_STAGES.map(id=>{const el=document.getElementById('ss-'+id);return{id:String(id),name:STAGES[id].nm,status:el?el.className.replace('sstat ','').replace('st-',''):'rdy'};});
-  return{version:1,generatedAt:new Date().toISOString(),part_type:type,label:T.label,summary:T.summary||'',design,dims,
+  return{version:2,generatedAt:new Date().toISOString(),part_type:type,label:T.label,summary:T.summary||'',design,dims,
+    controls:T.customerControls||[],hotspots:T.hotspots||[],
+    materials:Object.keys(MAT).filter(m=>MAT[m].ok),
     verdict:res.verdict,issues:res.reasons,checks:Object.entries(res.checks).map(([k,v])=>({name:k,pass:v.pass})),
     open_questions:[...new Set(questions)],history:PIPELINE_STATE.history,stages,svg:svg2D(true),
     branch:PIPELINE_STATE.chosenBranch?{id:PIPELINE_STATE.chosenBranch.branch_id||'',rationale:PIPELINE_STATE.chosenBranch.rationale||''}:null,
@@ -1764,21 +1830,27 @@ const MAT_HOLE=()=>new THREE.MeshStandardMaterial({color:0x050810,side:THREE.Bac
 
 function buildStarwheel(g,P,C){
   const pcd=P.pcd_mm,n=Math.max(1,Math.round(P.pocket_count)),r=P.pocket_radius_mm,t=P.wheel_thickness_mm,rim=P.rim_mm,bore=P.bore_diameter_mm,OD=pcd+2*r+2*rim;
-  const disk=new THREE.Mesh(new THREE.CylinderGeometry(OD/2,OD/2,t,96,1),MAT_BODY());disk.castShadow=true;g.add(disk);
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(bore/2+0.5,bore/2+0.5,t+2,32),MAT_HOLE()));
+  /* Pockets are cut as real holes in the extruded profile — this pipeline exists to catch
+     pockets that only LOOK open, so the viewer should not fake them with dark inserts. */
+  const prof=new THREE.Shape();prof.absarc(0,0,OD/2,0,Math.PI*2,false);
+  const boreHole=new THREE.Path();boreHole.absarc(0,0,bore/2,0,Math.PI*2,true);prof.holes.push(boreHole);
+  for(let i=0;i<n;i++){
+    const a=2*Math.PI*i/n;
+    const h=new THREE.Path();h.absarc((pcd/2)*Math.cos(a),(pcd/2)*Math.sin(a),r,0,Math.PI*2,true);prof.holes.push(h);
+  }
+  const disk=new THREE.Mesh(new THREE.ExtrudeGeometry(prof,{depth:t,bevelEnabled:false,curveSegments:64}),MAT_BODY());
+  disk.rotation.x=-Math.PI/2;disk.position.y=t/2;disk.castShadow=true;g.add(disk);
   const brg=new THREE.Mesh(new THREE.TorusGeometry(bore/2,1.5,8,32),new THREE.MeshStandardMaterial({color:0xff4d6d,emissive:0xff1040,emissiveIntensity:.5}));
   brg.rotation.x=Math.PI/2;brg.position.y=t/2+1;g.add(brg);
-  const pGeo=new THREE.CylinderGeometry(r,r,t+4,28), pMat=MAT_HOLE();
   const prMat=new THREE.MeshStandardMaterial({color:0x00d4b4,emissive:0x009e8c,emissiveIntensity:.6});
   for(let i=0;i<n;i++){
-    const a=2*Math.PI*i/n, px=(pcd/2)*Math.cos(a), pz=(pcd/2)*Math.sin(a);
-    const pc=new THREE.Mesh(pGeo,pMat);pc.position.set(px,0,pz);g.add(pc);
-    const pr=new THREE.Mesh(new THREE.TorusGeometry(r,1.2,7,32),prMat);pr.position.set(px,t/2+1.5,pz);pr.rotation.x=Math.PI/2;g.add(pr);
+    const a=2*Math.PI*i/n, px=(pcd/2)*Math.cos(a), pz=-(pcd/2)*Math.sin(a);  // shape y -> world -z
+    const pr=new THREE.Mesh(new THREE.TorusGeometry(r,1.2,7,32),prMat);pr.position.set(px,t+1.5,pz);pr.rotation.x=Math.PI/2;g.add(pr);
   }
   const bc=new THREE.Mesh(new THREE.TorusGeometry(pcd/2,0.7,5,120),new THREE.MeshStandardMaterial({color:0x00d4b4,emissive:0x004d44,emissiveIntensity:.4,transparent:true,opacity:.45}));
-  bc.position.y=t/2+2;bc.rotation.x=Math.PI/2;g.add(bc);
+  bc.position.y=t+2;bc.rotation.x=Math.PI/2;g.add(bc);
   const or2=new THREE.Mesh(new THREE.TorusGeometry(OD/2,1.8,7,120),new THREE.MeshStandardMaterial({color:0x4f6eff,emissive:0x1a2888,emissiveIntensity:.4,transparent:true,opacity:.6}));
-  or2.position.y=t/2+1;or2.rotation.x=Math.PI/2;g.add(or2);
+  or2.position.y=t+1;or2.rotation.x=Math.PI/2;g.add(or2);
   return OD/2;
 }
 

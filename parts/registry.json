@@ -25,6 +25,15 @@
         {"k": "pocket_radius_mm", "l": "Pocket radius", "u": "mm"},
         {"k": "wheel_thickness_mm", "l": "Wheel thickness", "u": "mm"}
       ],
+      "customer_controls": [
+        {"k": "pocket_clearance_mm", "l": "Fit in the pocket", "min": 0.3, "max": 1.8, "step": 0.05, "lo": "Snug", "hi": "Loose", "help": "How much room each container has in its pocket. Too snug and containers bind; too loose and they rattle."},
+        {"k": "wheel_thickness_mm", "l": "Wheel thickness", "min": 12, "max": 32, "step": 1, "lo": "Light", "hi": "Heavy duty", "help": "A thicker wheel is more rigid and lasts longer, but is heavier to change over."}
+      ],
+      "hotspots": [
+        {"at": "pocket", "title": "Your container sits here", "body": "Each pocket cradles one container as the wheel turns it through the machine."},
+        {"at": "bore", "title": "Mounts to the machine", "body": "The centre bore fits your machine's shaft."},
+        {"at": "web", "title": "Material between pockets", "body": "This band keeps the wheel rigid at speed. We check it never gets too thin."}
+      ],
       "branch_fields": ["pocket_count", "pcd_mm", "pocket_radius_mm", "pocket_clearance_mm", "wheel_thickness_mm", "material_id"],
       "cad_hint": "Build a disk of outer diameter OD = pcd_mm + 2*pocket_radius_mm + 2*rim_mm and thickness wheel_thickness_mm, cut a centre bore of bore_diameter_mm, then cut pocket_count circular pockets of radius pocket_radius_mm FULLY THROUGH the disk (cutThruAll) centred on the PCD bolt circle.",
       "cad_checks": [
@@ -58,6 +67,16 @@
         {"k": "starts", "l": "Number of flights", "u": ""},
         {"k": "handedness", "l": "Rotation", "u": ""}
       ],
+      "customer_controls": [
+        {"k": "pitch_mm", "l": "Container spacing", "min": 50, "max": 140, "step": 2, "lo": "Tight", "hi": "Wide", "help": "How far apart the screw sets your containers. This has to suit your container diameter."},
+        {"k": "starts", "l": "Number of flights", "min": 1, "max": 3, "step": 1, "lo": "1", "hi": "3", "help": "More flights means the screw turns slower for the same line speed — often the difference between fitting your drive and overspeeding it."},
+        {"k": "length_mm", "l": "Screw length", "min": 240, "max": 900, "step": 20, "lo": "Short", "hi": "Long", "help": "A longer screw controls more containers at once, giving steadier timing."}
+      ],
+      "hotspots": [
+        {"at": "flight", "title": "The spiral that sets spacing", "body": "As the screw turns, this flight moves each container along by one pitch — that is how they arrive evenly spaced."},
+        {"at": "pocket", "title": "One container per turn", "body": "Containers ride in the gap between flights. We check that gap fits yours even at their widest tolerance."},
+        {"at": "root", "title": "Core shaft", "body": "The solid core the flight wraps around. It sets how deeply the flight grips each container."}
+      ],
       "branch_fields": ["pitch_mm", "outer_diameter_mm", "root_diameter_mm", "length_mm", "starts", "flight_thickness_mm", "handedness", "material_id"],
       "cad_hint": "Build a root cylinder of root_diameter_mm x length_mm. Build ONE flight by sweeping a rectangular profile (radial width (outer_diameter_mm-root_diameter_mm)/2 + 1, thickness flight_thickness_mm, sketched on the XZ plane centred at radius root/2 + (OD-root)/4) along cq.Wire.makeHelix(pitch=pitch_mm*starts, height=length_mm, radius=root_diameter_mm/2) using .sweep(path, isFrenet=True); for starts > 1 union rotated copies of that flight (360/starts degrees apart about Z). Do NOT use twistExtrude - it only rotates the end face and cannot form a multi-turn helix.",
       "cad_checks": [
@@ -88,6 +107,16 @@
         {"k": "rail_height_mm", "l": "Rail height", "u": "mm"},
         {"k": "thickness_mm", "l": "Rail thickness", "u": "mm"},
         {"k": "contact_height_mm", "l": "Contact height above conveyor", "u": "mm"}
+      ],
+      "customer_controls": [
+        {"k": "arc_angle_deg", "l": "How far it wraps", "min": 30, "max": 190, "step": 5, "lo": "Short", "hi": "Long", "help": "A longer wrap supports containers for more of the turn, but past 180° it blocks access when you change over."},
+        {"k": "rail_radius_mm", "l": "Gap to the container", "min": 330, "max": 350, "step": 0.5, "lo": "Close", "hi": "Far", "help": "How close the rail sits to your containers. Too close pinches them, too far lets them tip out of the pocket."},
+        {"k": "contact_height_mm", "l": "Contact height", "min": 40, "max": 180, "step": 5, "lo": "Low", "hi": "High", "help": "Where the rail touches the container. It should press on the straight body, not the shoulder or the base."}
+      ],
+      "hotspots": [
+        {"at": "rail", "title": "Guides the container", "body": "This face runs alongside your containers and keeps them seated in the starwheel pockets."},
+        {"at": "pocket", "title": "Your containers", "body": "Shown to scale so you can see the running gap between them and the rail."},
+        {"at": "wheel", "title": "The starwheel it works with", "body": "The rail curves to match the wheel this part runs against."}
       ],
       "branch_fields": ["rail_radius_mm", "arc_angle_deg", "rail_height_mm", "thickness_mm", "contact_height_mm", "material_id"],
       "cad_hint": "Sketch an annular sector on the XY plane: inner arc of radius rail_radius_mm and outer arc of rail_radius_mm + thickness_mm spanning arc_angle_deg (moveTo / threePointArc / lineTo / threePointArc / close), then extrude by rail_height_mm.",

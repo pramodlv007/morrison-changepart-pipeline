@@ -4,110 +4,244 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Your Change Part — Morrison</title>
-<meta name="description" content="Plain-language review page for a Morrison change part: what we are making, how it looks, what we checked, and what we still need from you." />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f5bea'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23ffffff' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='7' r='2.6' fill='%232f5bea'/%3E%3Ccircle cx='16' cy='25' r='2.6' fill='%232f5bea'/%3E%3Ccircle cx='7' cy='16' r='2.6' fill='%232f5bea'/%3E%3Ccircle cx='25' cy='16' r='2.6' fill='%232f5bea'/%3E%3C/svg%3E" />
+<meta name="description" content="Explore your change part in 3D, try changes and see instantly whether they will run on your line." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0f1d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2358e6c8' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='7' r='2.6' fill='%235b8cff'/%3E%3Ccircle cx='16' cy='25' r='2.6' fill='%235b8cff'/%3E%3Ccircle cx='7' cy='16' r='2.6' fill='%235b8cff'/%3E%3Ccircle cx='25' cy='16' r='2.6' fill='%235b8cff'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#f5f7fb;--card:#ffffff;--ink:#16203a;--ink2:#5a6785;--ink3:#8a95ad;
-    --line:#e3e8f2;--brand:#2f5bea;--brand-soft:#eaf0ff;
-    --ok:#0f9d6b;--ok-soft:#e6f7f0;--warn:#b8690a;--warn-soft:#fdf3e4;--bad:#d5384f;--bad-soft:#fdecef;
-    --r:14px;--shadow:0 1px 2px rgba(22,32,58,.06),0 8px 24px rgba(22,32,58,.06);
+    --bg:#070a14; --bg2:#0b1020;
+    --glass:rgba(255,255,255,.045); --glass2:rgba(255,255,255,.075);
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+    --ink:#f2f5ff; --ink2:#a3afcc; --ink3:#6b779a;
+    --blue:#5b8cff; --teal:#3ddbb8; --violet:#a77bff; --amber:#ffb347; --rose:#ff6b85;
+    --ok:#3ddbb8; --bad:#ff6b85;
+    --r:20px; --rs:13px;
+    --shadow:0 2px 6px rgba(0,0,0,.35), 0 20px 50px -12px rgba(0,0,0,.6);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1040px;margin:0 auto;padding:0 20px 72px}
-  header.top{background:var(--card);border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:28px}
-  .top-in{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand),#00b894);display:flex;align-items:center;justify-content:center;font-size:17px}
-  .brand{font-weight:800;font-size:17px;letter-spacing:-.2px}
-  .brand span{color:var(--ink3);font-weight:500}
-  .spacer{flex:1}
-  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
-  .btn:hover{border-color:#c9d3e8;background:#fbfcff}
-  .btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
-  .btn-primary:hover{background:#2049cd;border-color:#2049cd}
-  .btn-ok{background:var(--ok);border-color:var(--ok);color:#fff}
-  .btn-ok:hover{background:#0c845a;border-color:#0c845a}
-  h1{font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.25;margin-bottom:8px}
-  .lede{font-size:17px;color:var(--ink2);max-width:62ch}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:24px;margin-bottom:20px}
-  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.9px;color:var(--ink3);font-weight:700;margin-bottom:16px}
-  .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;align-items:start}
-  @media(max-width:860px){.grid2{grid-template-columns:1fr}}
-  .status{display:inline-flex;align-items:center;gap:9px;padding:9px 16px;border-radius:100px;font-weight:700;font-size:15px}
-  .s-ok{background:var(--ok-soft);color:var(--ok)}
-  .s-warn{background:var(--warn-soft);color:var(--warn)}
-  .s-bad{background:var(--bad-soft);color:var(--bad)}
-  .dims{width:100%;border-collapse:collapse}
-  .dims td{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
-  .dims tr:last-child td{border-bottom:none}
-  .dims td:first-child{color:var(--ink2)}
-  .dims td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
-  .viewer{position:relative;background:#f0f3fa;border:1px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:1/1}
-  .viewer canvas{display:block;width:100%;height:100%}
-  .viewer .svgwrap{position:absolute;inset:0;display:none;background:#fff;padding:8px}
-  .viewer .svgwrap svg{width:100%;height:100%}
-  .vtabs{display:flex;gap:6px;margin-bottom:10px}
-  .vtab{flex:1;padding:8px;border:1px solid var(--line);background:var(--card);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink2);font-family:inherit}
-  .vtab.on{background:var(--brand-soft);border-color:#bed0ff;color:var(--brand)}
-  .hint{font-size:13px;color:var(--ink3);margin-top:9px;text-align:center}
-  .checks{list-style:none;display:grid;gap:10px}
-  .checks li{display:flex;gap:11px;align-items:flex-start;font-size:15px}
-  .tick{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-top:1px}
-  .t-ok{background:var(--ok-soft);color:var(--ok)}
-  .t-bad{background:var(--bad-soft);color:var(--bad)}
-  .issue{background:var(--bad-soft);border:1px solid #f6ccd4;border-radius:11px;padding:14px 16px;font-size:14.5px;margin-bottom:10px;color:#8c1f31}
-  .qbox{background:var(--warn-soft);border:1px solid #f3dcb5;border-radius:11px;padding:16px 18px;margin-bottom:12px}
-  .qbox .q{font-weight:700;font-size:15px;margin-bottom:9px;color:#7a4606}
-  .qbox textarea{width:100%;border:1px solid #e6cfa4;border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14.5px;resize:vertical;background:#fff;color:var(--ink)}
-  .qbox textarea:focus{outline:2px solid #e0a83f;outline-offset:-1px}
-  .steps{list-style:none;counter-reset:s;display:grid;gap:0}
-  .steps li{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--ink); font-family:Inter,system-ui,sans-serif; font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  /* aurora backdrop */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-2;
+    background:
+      radial-gradient(60rem 40rem at 12% -8%, rgba(91,140,255,.22), transparent 60%),
+      radial-gradient(48rem 34rem at 92% 6%, rgba(61,219,184,.16), transparent 62%),
+      radial-gradient(52rem 40rem at 60% 105%, rgba(167,123,255,.14), transparent 60%),
+      var(--bg);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(70% 60% at 50% 0%,#000 30%,transparent 100%);
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px 80px}
+
+  /* ---------- top bar ---------- */
+  .top{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px) saturate(1.3);background:rgba(7,10,20,.72);border-bottom:1px solid var(--line)}
+  .top-in{max-width:1240px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:14px}
+  .mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,var(--blue),var(--teal));display:grid;place-items:center;font-size:17px;box-shadow:0 6px 20px -6px rgba(91,140,255,.8)}
+  .brand{font-weight:800;letter-spacing:-.3px;font-size:16px;line-height:1.15}
+  .brand small{display:block;font-weight:500;color:var(--ink3);font-size:11.5px;letter-spacing:.3px}
+  .grow{flex:1}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--glass);color:var(--ink);
+       padding:10px 16px;border-radius:12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:.18s;white-space:nowrap}
+  .btn:hover{background:var(--glass2);border-color:rgba(255,255,255,.28);transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn-cta{background:linear-gradient(135deg,var(--blue),#7a5bff);border-color:transparent;box-shadow:0 10px 26px -10px rgba(91,140,255,.9)}
+  .btn-cta:hover{filter:brightness(1.08);background:linear-gradient(135deg,var(--blue),#7a5bff)}
+  .btn-ok{background:linear-gradient(135deg,var(--teal),#19b48f);border-color:transparent;color:#03231c;box-shadow:0 10px 26px -10px rgba(61,219,184,.9)}
+  .btn-ok:hover{filter:brightness(1.06);background:linear-gradient(135deg,var(--teal),#19b48f)}
+  .btn.sm{padding:7px 12px;font-size:12.5px;border-radius:10px}
+
+  /* ---------- hero ---------- */
+  .hero{padding:44px 0 26px;display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--teal);margin-bottom:14px}
+  .eyebrow::before{content:"";width:26px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--teal),transparent)}
+  h1{font-size:clamp(34px,5vw,54px);font-weight:900;letter-spacing:-1.6px;line-height:1.03;
+     background:linear-gradient(160deg,#fff 20%,#9fb4e8 95%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{font-size:17.5px;color:var(--ink2);max-width:58ch;margin-top:14px}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:100px;font-size:13.5px;font-weight:700;border:1px solid var(--line2);background:var(--glass)}
+  .chip.ok{color:var(--ok);border-color:rgba(61,219,184,.34);background:rgba(61,219,184,.1)}
+  .chip.bad{color:var(--bad);border-color:rgba(255,107,133,.34);background:rgba(255,107,133,.1)}
+  .chip.warn{color:var(--amber);border-color:rgba(255,179,71,.34);background:rgba(255,179,71,.1)}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 22%,transparent)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .chip.live .dot{animation:pulse 1.8s infinite}
+
+  /* ---------- studio (3D) ---------- */
+  .studio{position:relative;border-radius:26px;overflow:hidden;border:1px solid var(--line2);
+    background:radial-gradient(100% 80% at 50% 0%,#141d38 0%,#080c18 70%);box-shadow:var(--shadow);aspect-ratio:16/10;min-height:420px}
+  /* min-height + aspect-ratio would drive the WIDTH past the viewport on phones */
+  @media(max-width:760px){
+    .wrap{padding:0 16px 60px}
+    .top-in{padding:10px 16px;gap:10px}
+    .top-in .btn.sm:not(.btn-cta){display:none}   /* PDF / drawing move to the desktop view */
+    .brand small{display:none}
+    .card{padding:18px}
+    .kv>div{padding:11px 13px;font-size:13.5px}
+    .kv .v{white-space:normal;text-align:right}
+    .studio{aspect-ratio:1/1;min-height:0;border-radius:20px}
+    .tools,.tools-r{top:10px}.tools{left:10px}.tools-r{right:10px}
+    .tool{padding:6px 9px;font-size:12px}
+    .readout{bottom:10px;left:10px;padding:9px 12px;font-size:10.5px;max-width:64%}
+    .hint{display:none}
+  }
+  .studio canvas{display:block;width:100%;height:100%;touch-action:none}
+  .studio.fs{position:fixed;inset:0;z-index:90;border-radius:0;aspect-ratio:auto;min-height:0}
+  #svgwrap{position:absolute;inset:0;display:none;background:#0a0f1e;padding:18px}
+  #svgwrap svg{width:100%;height:100%}
+  .ov{position:absolute;z-index:3}
+  .glass{backdrop-filter:blur(16px) saturate(1.4);background:rgba(10,14,28,.6);border:1px solid var(--line2);border-radius:14px}
+  .tools{top:16px;left:16px;display:flex;gap:6px;padding:6px}
+  .tools-r{top:16px;right:16px;display:flex;gap:6px;padding:6px}
+  .tool{border:none;background:transparent;color:var(--ink2);font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .tool:hover{background:var(--glass2);color:var(--ink)}
+  .tool.on{background:linear-gradient(135deg,rgba(91,140,255,.34),rgba(61,219,184,.26));color:#fff}
+  .readout{bottom:16px;left:16px;padding:12px 16px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink2);line-height:1.8;max-width:min(60%,360px)}
+  .readout b{color:var(--ink);font-weight:500}
+  .readout .rv{color:var(--teal)}
+  .hint{bottom:18px;right:18px;font-size:12px;color:var(--ink3);transition:opacity .5s;pointer-events:none;background:rgba(10,14,28,.55);padding:7px 13px;border-radius:100px;border:1px solid var(--line)}
+  /* hotspots */
+  /* top/left must be pinned: without them an absolutely positioned element starts at its
+     static position (bottom of the studio) and translate() pushes it outside the clip. */
+  .hs{position:absolute;top:0;left:0;z-index:4;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;cursor:pointer;
+      border:1.5px solid rgba(255,255,255,.75);background:rgba(91,140,255,.28);backdrop-filter:blur(4px);transition:opacity .25s,transform .18s;display:grid;place-items:center}
+  .hs::after{content:"";width:7px;height:7px;border-radius:50%;background:#fff}
+  .hs::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid rgba(91,140,255,.55);animation:ring 2.6s ease-out infinite}
+  @keyframes ring{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+  .hs:hover{transform:scale(1.18)}
+  .hs.act{background:linear-gradient(135deg,var(--blue),var(--teal));border-color:#fff}
+  .hscard{position:absolute;z-index:5;width:min(280px,72vw);padding:15px 17px;transform:translate(-50%,-125%);opacity:0;pointer-events:none;transition:opacity .22s,transform .22s}
+  .hscard.show{opacity:1;pointer-events:auto;transform:translate(-50%,-135%)}
+  .hscard.below{transform:translate(-50%,35%)}
+  .hscard.below.show{transform:translate(-50%,25%)}
+  .hscard h4{font-size:14.5px;font-weight:800;margin-bottom:5px}
+  .hscard p{font-size:13px;color:var(--ink2);line-height:1.55}
+  .hscard .x{position:absolute;top:8px;right:10px;cursor:pointer;color:var(--ink3);font-size:15px;line-height:1}
+  .hscard .x:hover{color:var(--ink)}
+
+  /* ---------- layout ---------- */
+  .split{display:grid;grid-template-columns:1fr 372px;gap:22px;align-items:start;margin-top:22px}
+  @media(max-width:1060px){.split{grid-template-columns:1fr}}
+  .card{border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+        box-shadow:var(--shadow);padding:24px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent)}
+  .card h2{font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink3);font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:9px}
+  .card h2 .ic{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;background:var(--glass2);border:1px solid var(--line)}
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:22px;margin-top:22px}
+  .bento>*{grid-column:span 3}
+  .bento .wide{grid-column:span 6}
+  @media(max-width:860px){.bento>*{grid-column:span 6}}
+
+  /* ---------- configurator ---------- */
+  .sticky{position:sticky;top:78px}
+  .swatches{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .sw{position:relative;border:1px solid var(--line2);border-radius:14px;padding:12px 13px;cursor:pointer;transition:.18s;background:var(--glass);text-align:left;font:inherit;color:var(--ink);overflow:hidden}
+  .sw:hover{border-color:rgba(255,255,255,.3);transform:translateY(-2px)}
+  .sw.on{border-color:var(--teal);background:rgba(61,219,184,.12);box-shadow:0 0 0 1px rgba(61,219,184,.3)}
+  .sw .puck{width:100%;height:30px;border-radius:9px;margin-bottom:9px;border:1px solid rgba(255,255,255,.14)}
+  .sw .nm{font-size:13px;font-weight:700;letter-spacing:-.1px}
+  .sw .ds{font-size:11px;color:var(--ink3);margin-top:1px}
+  .sw.on .tickmk{position:absolute;top:9px;right:9px;width:18px;height:18px;border-radius:50%;background:var(--teal);color:#042;display:grid;place-items:center;font-size:11px;font-weight:900}
+  .ctl{margin-bottom:22px}
+  .ctl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+  .ctl-l{font-size:14px;font-weight:700}
+  .ctl-v{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--teal);font-weight:500}
+  .ctl-v.changed{color:var(--amber)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;background:rgba(255,255,255,.13);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:linear-gradient(140deg,#fff,#cfe0ff);border:none;box-shadow:0 2px 10px rgba(0,0,0,.5),0 0 0 4px rgba(91,140,255,.28);transition:.15s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.14);box-shadow:0 2px 12px rgba(0,0,0,.5),0 0 0 7px rgba(91,140,255,.34)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:none;box-shadow:0 0 0 4px rgba(91,140,255,.28)}
+  .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:7px}
+  .help{font-size:12px;color:var(--ink3);margin-top:8px;line-height:1.5;display:none}
+  .ctl.open .help{display:block}
+  .qmark{border:none;background:var(--glass2);color:var(--ink3);width:17px;height:17px;border-radius:50%;font-size:10.5px;font-weight:800;cursor:pointer;line-height:1}
+  .qmark:hover{color:var(--ink)}
+  .verdict{border-radius:15px;padding:15px 17px;margin-top:4px;border:1px solid var(--line2);background:var(--glass);transition:.25s}
+  .verdict.ok{border-color:rgba(61,219,184,.36);background:rgba(61,219,184,.1)}
+  .verdict.bad{border-color:rgba(255,107,133,.36);background:rgba(255,107,133,.1)}
+  .verdict .vt{font-size:14px;font-weight:800;display:flex;align-items:center;gap:9px}
+  .verdict .vb{font-size:12.5px;color:var(--ink2);margin-top:7px;line-height:1.5}
+  .diff{margin-top:14px;font-size:12.5px;color:var(--ink2);border-top:1px dashed var(--line2);padding-top:13px;display:none}
+  .diff.show{display:block}
+  .diff b{color:var(--amber);font-weight:700}
+  .spin{width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:var(--teal);animation:sp .7s linear infinite;display:inline-block}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ---------- data ---------- */
+  .kv{display:grid;gap:1px;background:var(--line);border-radius:13px;overflow:hidden;border:1px solid var(--line)}
+  .kv>div{display:flex;justify-content:space-between;gap:14px;padding:13px 15px;background:rgba(10,14,28,.55);font-size:14px}
+  .kv .k{color:var(--ink2)}
+  .kv .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .kv .v.hl{color:var(--teal)}
+  .checks{display:grid;gap:11px}
+  .checks li{display:flex;gap:12px;align-items:flex-start;font-size:14px;list-style:none}
+  .tk{width:22px;height:22px;border-radius:7px;flex-shrink:0;display:grid;place-items:center;font-size:11px;font-weight:900;margin-top:1px}
+  .tk.y{background:rgba(61,219,184,.16);color:var(--teal)}
+  .tk.n{background:rgba(255,107,133,.16);color:var(--bad)}
+  .issue{border-left:3px solid var(--bad);background:rgba(255,107,133,.09);border-radius:0 12px 12px 0;padding:13px 16px;font-size:14px;margin-bottom:10px}
+  .qwrap{border:1px solid rgba(255,179,71,.3);background:rgba(255,179,71,.08);border-radius:15px;padding:17px;margin-bottom:12px}
+  .qwrap .q{font-weight:700;font-size:14.5px;color:var(--amber);margin-bottom:11px;display:flex;gap:9px}
+  textarea{width:100%;border:1px solid var(--line2);border-radius:12px;padding:12px 14px;font:inherit;font-size:14px;
+    background:rgba(0,0,0,.28);color:var(--ink);resize:vertical}
+  textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(91,140,255,.18)}
+  textarea::placeholder{color:var(--ink3)}
+  .steps{display:grid;gap:0;list-style:none}
+  .steps li{display:flex;gap:15px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line);position:relative}
   .steps li:last-child{border-bottom:none}
-  .sdot{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:#eef1f7;color:var(--ink3)}
-  .sdot.done{background:var(--ok-soft);color:var(--ok)}
-  .sdot.now{background:var(--brand-soft);color:var(--brand)}
-  .stitle{font-weight:600;font-size:15px}
-  .ssub{font-size:13.5px;color:var(--ink3)}
-  textarea.req{width:100%;min-height:96px;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-family:inherit;font-size:15px;resize:vertical;color:var(--ink)}
-  textarea.req:focus{outline:2px solid var(--brand);outline-offset:-1px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
-  .muted{color:var(--ink3);font-size:13.5px}
-  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(120%);background:var(--ink);color:#fff;padding:13px 22px;border-radius:11px;font-weight:600;font-size:14.5px;box-shadow:0 10px 30px rgba(22,32,58,.25);transition:transform .3s cubic-bezier(.2,.8,.2,1);z-index:60}
-  .toast.show{transform:translateX(-50%) translateY(0)}
-  .empty{text-align:center;padding:70px 20px}
-  .empty .big{font-size:46px;margin-bottom:14px}
-  .callout{background:var(--brand-soft);border:1px solid #cfdcff;border-radius:11px;padding:15px 17px;font-size:14.5px;color:#22407f}
-  .glossary summary{cursor:pointer;font-weight:600;font-size:14.5px;color:var(--brand);list-style:none}
-  .glossary summary::-webkit-details-marker{display:none}
-  .glossary summary::before{content:"▸ ";transition:.2s}
-  .glossary[open] summary::before{content:"▾ "}
-  .glossary dl{margin-top:12px;display:grid;gap:9px;font-size:14.5px}
-  .glossary dt{font-weight:700}
-  .glossary dd{color:var(--ink2);margin-bottom:5px}
+  .sd{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:11px;font-weight:900;background:var(--glass2);color:var(--ink3);border:1px solid var(--line2)}
+  .sd.done{background:linear-gradient(135deg,var(--teal),#19b48f);color:#042;border-color:transparent}
+  .sd.now{background:linear-gradient(135deg,var(--blue),#7a5bff);color:#fff;border-color:transparent;animation:pulse 1.8s infinite}
+  .st{font-weight:650;font-size:14.5px}
+  .ss{font-size:12.5px;color:var(--ink3)}
+  details summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--teal);list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"＋ ";font-weight:800}
+  details[open] summary::before{content:"－ "}
+  dl{margin-top:14px;display:grid;gap:11px;font-size:14px}
+  dt{font-weight:700}
+  dd{color:var(--ink2)}
+  .muted{color:var(--ink3);font-size:13px}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,140%);z-index:99;
+    background:linear-gradient(135deg,var(--teal),#19b48f);color:#042;padding:14px 26px;border-radius:14px;font-weight:800;font-size:14.5px;
+    box-shadow:0 18px 44px -12px rgba(61,219,184,.7);transition:transform .34s cubic-bezier(.2,.9,.25,1)}
+  .toast.show{transform:translate(-50%,0)}
+  .empty{text-align:center;padding:90px 20px}
+  .empty .big{font-size:60px;margin-bottom:18px;filter:drop-shadow(0 8px 24px rgba(91,140,255,.5))}
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s cubic-bezier(.2,.8,.2,1),transform .6s cubic-bezier(.2,.8,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
   @media print{
-    body{background:#fff}
-    .noprint{display:none!important}
-    .card{box-shadow:none;break-inside:avoid;page-break-inside:avoid}
-    header.top{margin-bottom:16px}
+    body{background:#fff;color:#111}body::before,body::after{display:none}
+    .noprint,.top,.toast{display:none!important}
+    .card{background:#fff;border:1px solid #ccc;box-shadow:none;break-inside:avoid;color:#111}
+    h1{-webkit-text-fill-color:#111;color:#111}
+    .kv>div{background:#fff;color:#111}.kv .k{color:#555}
+    .studio{aspect-ratio:16/9}
   }
 </style>
 </head>
 <body>
 
-<header class="top">
+<div class="top noprint">
   <div class="top-in">
-    <div class="logo">⚙</div>
-    <div class="brand">Morrison <span>· Change Parts</span></div>
-    <div class="spacer"></div>
-    <button class="btn noprint" onclick="window.print()">🖨 Save as PDF</button>
-    <button class="btn noprint" id="dl-svg" onclick="downloadDrawing()">⬇ Drawing</button>
-    <button class="btn noprint" onclick="location.reload()">↻ Refresh</button>
+    <div class="mark">⚙</div>
+    <div class="brand">Morrison<small>Change Parts</small></div>
+    <div class="grow"></div>
+    <button class="btn sm" onclick="window.print()">🖨 PDF</button>
+    <button class="btn sm" onclick="downloadDrawing()">⬇ Drawing</button>
+    <button class="btn sm btn-cta" onclick="document.getElementById('decide').scrollIntoView()">Your decision ↓</button>
   </div>
-</header>
+</div>
 
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast"></div>
@@ -115,25 +249,26 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-/* ============================================================
-   Customer review page.
-   Reads the hand-off the engineering dashboard writes to localStorage,
-   presents it in plain language, and writes the customer's decision back.
-   No cost, tolerances, weighted scores or internal rankings are ever shown.
-   ============================================================ */
+/* =============================================================
+   Customer review + light configurator.
+   Reads the engineering hand-off from localStorage, renders it in plain
+   language, and lets the customer try changes in 3D. Every change is
+   re-checked by the same deterministic engine the engineers use
+   (POST /api/validate) — nothing here invents a verdict.
+   ============================================================= */
 const KEY_PAYLOAD='morrison_customer_payload', KEY_REQUEST='morrison_customer_request', KEY_DECISION='morrison_customer_decision';
-let P=null;
+let P=null, EDIT={}, BASE={}, lastCheck=null, checkTimer=null;
 
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 
-/* Engineering check names -> what they mean for the customer's line. */
+/* ---- plain language ---- */
 const CHECK_WORDS={
   'Geometry Valid (web > 0)':'The shape is physically buildable',
   'Geometry Valid (root < OD, pocket > 0)':'The shape is physically buildable',
   'Geometry Valid (gap > 0)':'The shape is physically buildable',
-  'Web Thickness ≥ 8.0 mm':'Enough material between pockets so the part will not flex or crack',
-  'Effective Clearance > 0.20 mm':'Your containers fit the pockets without binding, even at their widest tolerance',
+  'Web Thickness ≥ 8.0 mm':'Enough material between pockets so it will not flex or crack',
+  'Effective Clearance > 0.20 mm':'Your containers fit the pockets without binding, even at their widest',
   'Effective Pocket Clearance > 0.20 mm':'Your containers fit between the flights without binding',
   'Pocket Clearance ≤ 6.0 mm (timing)':'Containers are held snugly enough to stay in time',
   'Flight Engagement ≥ 20% of bottle ⌀':'The screw grips enough of each container to control it',
@@ -143,52 +278,58 @@ const CHECK_WORDS={
   'Drive Torque Within Rating':'Your machine drive has enough torque to turn it',
   'Effective Running Gap > 0.20 mm':'Containers pass the rail without binding',
   'Running Gap ≤ 5.0 mm':'Containers stay seated and cannot tip out',
-  'Arc Angle 20–180°':'The rail wrap still allows access for changeovers',
-  'Contact Height on Bottle Body (25–75% H)':'The rail touches the straight body of the container, not the shoulder or base',
+  'Arc Angle 20–180°':'The wrap still allows access for changeovers',
+  'Contact Height on Bottle Body (25–75% H)':'The rail touches the straight body, not the shoulder or base',
   'Rail Thickness ≥ 6.0 mm':'The rail is thick enough to stay rigid',
   'Rail Height ≥ 15 mm':'The rail is tall enough to guide the container',
-  'Radial Load ≤ Material Allowable':'The chosen material can take the load at your line speed',
+  'Radial Load ≤ Material Allowable':'The material can take the load at your line speed',
   'Speed Within Machine Limit':'Runs at your target line speed',
-  'Food-Contact Compliant':'Material is approved for food and beverage contact'
+  'Food-Contact Compliant':'Material is approved for food and beverage contact',
+  'Stage 5 physics implemented':'Engineering checks for this part are still being set up'
 };
-function checkWords(name){return CHECK_WORDS[name]||name;}
-
-/* Technical failure text -> customer-facing sentence. */
+const checkWords=n=>CHECK_WORDS[n]||n;
 function issueWords(t){
   t=String(t);
-  if(/eff\.?\s*clearance|effective clearance/i.test(t)&&/floor|≤|<=/.test(t))return'The containers would be gripped too tightly and could jam on the line.';
+  if(/eff\.?\s*clearance|effective clearance/i.test(t)&&/floor|≤|<=/.test(t))return'The containers would be gripped too tightly and could jam.';
   if(/eff\.?\s*gap|running gap/i.test(t)&&/floor|≤|<=/.test(t))return'The rail would sit too close and could pinch the containers.';
-  if(/Gap .* >/.test(t))return'The rail would sit too far away and containers could tip out of the pocket.';
+  if(/Gap .* >/.test(t))return'The rail would sit too far away — containers could tip out of the pocket.';
   if(/rattles|mis-times/i.test(t))return'Containers would sit too loosely and lose their spacing.';
-  if(/drive limit|rpm/i.test(t))return'The part would have to turn faster than your machine drive allows at this line speed.';
-  if(/torque/i.test(t))return'Your machine drive would not have enough torque to turn this part.';
-  if(/rated max/i.test(t))return'The requested line speed is above this machine’s rated maximum.';
-  if(/not food-contact approved|unregistered/i.test(t))return'The requested material is not approved for food and beverage contact.';
-  if(/web .* <|below structural/i.test(t))return'There would be too little material between pockets, risking cracking.';
-  if(/traps bottles|changeover access|outside 20/i.test(t))return'The rail would wrap too far around and block access for changeovers.';
-  if(/shoulder or base|body band/i.test(t))return'The rail would touch the container’s shoulder or base instead of its straight body.';
-  if(/ride over the flight|engages only/i.test(t))return'The screw would not grip enough of each container to control it.';
-  if(/bottles engaged|stable timing/i.test(t))return'The screw is too short to control enough containers for steady timing.';
+  if(/drive limit|rpm/i.test(t))return'It would have to turn faster than your machine drive allows.';
+  if(/torque/i.test(t))return'Your machine drive would not have enough torque to turn it.';
+  if(/rated max/i.test(t))return'That line speed is above this machine’s rated maximum.';
+  if(/not food-contact approved|unregistered/i.test(t))return'That material is not approved for food and beverage contact.';
+  if(/web .* <|below structural/i.test(t))return'Too little material between pockets — it could crack.';
+  if(/traps bottles|changeover access|outside 20/i.test(t))return'It would wrap too far around and block changeover access.';
+  if(/shoulder or base|body band/i.test(t))return'It would touch the container’s shoulder or base instead of its body.';
+  if(/ride over the flight|engages only/i.test(t))return'It would not grip enough of each container to control it.';
+  if(/bottles engaged|stable timing/i.test(t))return'Too short to control enough containers for steady timing.';
+  if(/no Stage 5 physics/i.test(t))return'Engineering checks for this type of part are still being set up.';
   return t;
 }
-
-const FIELD_WORDS={
-  material_id:'Material', machine_id:'Your machine', target_speed_cpm:'Line speed',
-  bottle_diameter_mm:'Container diameter', bottle_height_mm:'Container height',
-  handedness:'Rotation', starts:'Number of flights'
+const FIELD_WORDS={material_id:'Material',machine_id:'Your machine',target_speed_cpm:'Line speed',
+  bottle_diameter_mm:'Container diameter',bottle_height_mm:'Container height',handedness:'Rotation',starts:'Number of flights'};
+const UNITS={target_speed_cpm:'containers/min',bottle_diameter_mm:'mm',bottle_height_mm:'mm'};
+const MAT_INFO={
+  'UHMW-PE':{c:'#e8eef7',d:'Self-lubricating, non-marking'},
+  'POM':{c:'#dfe6ee',d:'Stiff and dimensionally stable'},
+  'PTFE':{c:'#f4f6f8',d:'Very low friction, chemical-proof'},
+  'PEEK':{c:'#d9c89a',d:'Premium, high temperature'}
 };
-const UNITS={target_speed_cpm:'containers/min', bottle_diameter_mm:'mm', bottle_height_mm:'mm'};
-function handWords(v){return String(v).toUpperCase().startsWith('L')?'Left-hand':'Right-hand';}
-
+const handWords=v=>String(v).toUpperCase().startsWith('L')?'Left-hand':'Right-hand';
 function fmt(k,v){
   if(v==null||v==='')return '—';
   if(k==='handedness')return handWords(v);
   if(typeof v==='number')return (Math.round(v*100)/100)+(UNITS[k]?' '+UNITS[k]:'');
   return String(v)+(UNITS[k]?' '+UNITS[k]:'');
 }
+const design=()=>({...(P&&P.design||{}),...EDIT});
 
-/* ---------- 3D preview (same construction as the engineering viewer) ---------- */
-let scene,camera,renderer,controls,grp,glOK=false;
+/* =============================================================
+   3D studio
+   ============================================================= */
+let scene,camera,renderer,controls,root,glOK=false,autoRot=true,ghostsOn=true,explode=0,explodeT=0,rebuildQueued=false;
+let HOTS=[],camAnim=null,extent=300;
+
 function gridGeom(fn,nu,nv){
   const pos=[],idx=[];
   for(let i=0;i<=nu;i++){const u=i/nu;for(let j=0;j<=nv;j++){const p=fn(u,j/nv);pos.push(p[0],p[1],p[2]);}}
@@ -196,83 +337,254 @@ function gridGeom(fn,nu,nv){
   const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g;
 }
-function build3D(){
-  const d=P.design,t=P.part_type,body=new THREE.MeshStandardMaterial({color:0x4f77e8,metalness:.1,roughness:.55}),
-        hole=new THREE.MeshStandardMaterial({color:0xdfe6f5,side:THREE.BackSide}),
-        ghost=new THREE.MeshStandardMaterial({color:0x9fb0cc,transparent:true,opacity:.25,depthWrite:false});
-  const g=new THREE.Group(); let extent=300;
+/* The part is tinted by the chosen material so the swatches mean something in 3D.
+   Engineering plastics are matte and light — not glowing neon. */
+const MAT_3D={'UHMW-PE':0xe6ecf5,'POM':0xd6dee8,'PTFE':0xf2f5f8,'PEEK':0xc9a961};
+function matBody(){
+  const m=(design().material_id)||'UHMW-PE';
+  return new THREE.MeshStandardMaterial({color:MAT_3D[m]||0xdde5f0,metalness:.08,roughness:.52});
+}
+const matFlight=()=>{const b=matBody();b.side=THREE.DoubleSide;return b;};
+const matHole=()=>new THREE.MeshStandardMaterial({color:0x0a0f1c,side:THREE.BackSide,metalness:0,roughness:1});
+const matGhost=()=>new THREE.MeshPhysicalMaterial({color:0x9ec6ff,transparent:true,opacity:.2,roughness:.08,metalness:0,transmission:.7,depthWrite:false});
+
+/* Each part builds: meshes, a set of explodable groups, and hotspot anchors. */
+function buildPart(){
+  const d=design(),t=P.part_type,g=new THREE.Group(),ghosts=new THREE.Group(),anchors={};
+  ghosts.name='ghosts';
   if(t==='feed_screw'){
-    const od=d.outer_diameter_mm,root=Math.min(d.root_diameter_mm,od-2),len=d.length_mm,pitch=d.pitch_mm,ft=d.flight_thickness_mm;
-    const starts=Math.max(1,Math.round(d.starts||1)),hand=String(d.handedness||'RH').toUpperCase().startsWith('L')?-1:1;
-    const core=new THREE.Mesh(new THREE.CylinderGeometry(root/2,root/2,len,48,1),body);core.rotation.z=Math.PI/2;g.add(core);
-    const lead=pitch*starts,turns=len/lead,nu=Math.max(24,Math.round(turns*40)),x=u=>-len/2+len*u,r0=root/2-1,r1=od/2;
-    const fm=new THREE.MeshStandardMaterial({color:0x2fa08f,metalness:.1,roughness:.5,side:THREE.DoubleSide});
+    const od=+d.outer_diameter_mm,root0=Math.min(+d.root_diameter_mm,od-2),len=+d.length_mm,pitch=+d.pitch_mm,ft=+d.flight_thickness_mm;
+    const starts=Math.max(1,Math.round(+d.starts||1)),hand=String(d.handedness||'RH').toUpperCase().startsWith('L')?-1:1;
+    /* Steel shaft vs the plastic flight — without the contrast the screw reads as a white blur. */
+    const core=new THREE.Mesh(new THREE.CylinderGeometry(root0/2,root0/2,len,56,1),
+      new THREE.MeshStandardMaterial({color:0x7d8798,metalness:.72,roughness:.28}));
+    core.rotation.z=Math.PI/2;core.name='core';g.add(core);
+    const lead=pitch*starts,turns=len/lead,nu=Math.max(28,Math.round(turns*44)),X=u=>-len/2+len*u,r0=root0/2-1,r1=od/2;
+    const fm=matFlight();
     for(let s=0;s<starts;s++){
       const off=2*Math.PI*s/starts,th=u=>hand*2*Math.PI*turns*u+off;
-      const surf=dx=>gridGeom((u,v)=>{const r=r0+(r1-r0)*v,a=th(u);return[x(u)+dx,r*Math.cos(a),r*Math.sin(a)];},nu,2);
-      g.add(new THREE.Mesh(surf(ft/2),fm));g.add(new THREE.Mesh(surf(-ft/2),fm));
-      g.add(new THREE.Mesh(gridGeom((u,w)=>{const a=th(u);return[x(u)-ft/2+ft*w,r1*Math.cos(a),r1*Math.sin(a)];},nu,1),fm));
+      const fl=new THREE.Group();fl.name='flight'+s;fl.userData.explode=[0,0,0];
+      const surf=dx=>gridGeom((u,v)=>{const r=r0+(r1-r0)*v,a=th(u);return[X(u)+dx,r*Math.cos(a),r*Math.sin(a)];},nu,2);
+      fl.add(new THREE.Mesh(surf(ft/2),fm));fl.add(new THREE.Mesh(surf(-ft/2),fm));
+      fl.add(new THREE.Mesh(gridGeom((u,w)=>{const a=th(u);return[X(u)-ft/2+ft*w,r1*Math.cos(a),r1*Math.sin(a)];},nu,1),fm));
+      fl.userData.explode=[0,Math.cos(off)*od*.55,Math.sin(off)*od*.55];
+      g.add(fl);
     }
-    const bd=d.bottle_diameter_mm||66,n=Math.floor(len/pitch);
-    for(let k=0;k<Math.min(n,5);k++){const bx=-len/2+pitch*(k+.5)+pitch*.25;if(bx+bd/2>len/2)break;
-      const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,(d.bottle_height_mm||210)*.8,28),ghost);b.position.set(bx,0,root/2+bd/2+.5);g.add(b);}
+    const bd=+d.bottle_diameter_mm||66,bh=+d.bottle_height_mm||210,n=Math.floor(len/pitch);
+    for(let k=0;k<Math.min(n,6);k++){
+      const bx=-len/2+pitch*(k+.5)+pitch*.25;if(bx+bd/2>len/2)break;
+      const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,bh*.8,30),matGhost());
+      b.position.set(bx,0,root0/2+bd/2+.5);ghosts.add(b);
+      if(k===1)anchors.pocket=[bx,0,root0/2+bd/2+.5];
+    }
+    anchors.flight=[0,od/2*.86,od/2*.42];
+    anchors.root=[-len/2+len*.18,0,root0/2];
     extent=len/2+od/2;
   }else if(t==='guide_rail'){
-    const R=d.rail_radius_mm,th=d.thickness_mm,h=d.rail_height_mm,arc=d.arc_angle_deg*Math.PI/180,pcd=d.mating_pcd_mm||620,bd=d.bottle_diameter_mm||54;
+    const R=+d.rail_radius_mm,th=+d.thickness_mm,h=+d.rail_height_mm,arc=+d.arc_angle_deg*Math.PI/180,
+          pcd=+d.mating_pcd_mm||620,bd=+d.bottle_diameter_mm||54,bh=+d.bottle_height_mm||210;
     const a0=-Math.PI/2-arc/2,a1=-Math.PI/2+arc/2,sh=new THREE.Shape();
     sh.absarc(0,0,R,a0,a1,false);sh.absarc(0,0,R+th,a1,a0,true);
-    const rail=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false,curveSegments:64}),body);
-    rail.rotation.x=-Math.PI/2;rail.position.y=-h/2;g.add(rail);
+    const rail=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false,curveSegments:80}),matBody());
+    rail.rotation.x=-Math.PI/2;rail.position.y=-h/2;rail.name='rail';rail.userData.explode=[0,h*3.4,0];g.add(rail);
     const wheelR=pcd/2+bd/2+9;
-    const wheel=new THREE.Mesh(new THREE.CylinderGeometry(wheelR,wheelR,16,80,1),new THREE.MeshStandardMaterial({color:0xb9c6de,transparent:true,opacity:.3,depthWrite:false}));
-    wheel.position.y=-h/2-9;g.add(wheel);
+    const wheel=new THREE.Mesh(new THREE.CylinderGeometry(wheelR,wheelR,16,90,1),
+      new THREE.MeshStandardMaterial({color:0x2a3a63,transparent:true,opacity:.34,roughness:.6,depthWrite:false}));
+    wheel.position.y=-h/2-9;wheel.name='wheel';wheel.userData.explode=[0,-h*2.4,0];g.add(wheel);
     const N=Math.max(1,Math.round(Math.PI*pcd/(2.2*bd))),nArc=Math.max(1,Math.round(arc/(2*Math.PI)*N));
-    for(let i=0;i<nArc;i++){const a=Math.PI/2+(i-(nArc-1)/2)*(2*Math.PI/N);
-      const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,(d.bottle_height_mm||210)*.6,28),ghost);
-      b.position.set((pcd/2)*Math.cos(a),(d.bottle_height_mm||210)*.3-h/2,(pcd/2)*Math.sin(a));g.add(b);}
+    for(let i=0;i<nArc;i++){
+      const a=Math.PI/2+(i-(nArc-1)/2)*(2*Math.PI/N);
+      const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,bh*.6,30),matGhost());
+      b.position.set((pcd/2)*Math.cos(a),bh*.3-h/2,(pcd/2)*Math.sin(a));ghosts.add(b);
+      if(i===Math.floor(nArc/2))anchors.pocket=[b.position.x,b.position.y*.6,b.position.z];
+    }
+    anchors.rail=[0,0,R+th/2];
+    anchors.wheel=[pcd/2*.62,-h/2-9,pcd/2*.42];
     extent=R+th;
   }else{
-    const pcd=d.pcd_mm,n=Math.max(1,Math.round(d.pocket_count)),r=d.pocket_radius_mm,th=d.wheel_thickness_mm,
-          rim=d.rim_mm||8,bore=d.bore_diameter_mm||50,OD=pcd+2*r+2*rim;
-    g.add(new THREE.Mesh(new THREE.CylinderGeometry(OD/2,OD/2,th,96,1),body));
-    g.add(new THREE.Mesh(new THREE.CylinderGeometry(bore/2+.5,bore/2+.5,th+2,32),hole));
-    const pg=new THREE.CylinderGeometry(r,r,th+4,28);
-    for(let i=0;i<n;i++){const a=2*Math.PI*i/n;const m=new THREE.Mesh(pg,hole);m.position.set((pcd/2)*Math.cos(a),0,(pcd/2)*Math.sin(a));g.add(m);}
+    const pcd=+d.pcd_mm,n=Math.max(1,Math.round(+d.pocket_count)),r=+d.pocket_radius_mm,th=+d.wheel_thickness_mm,
+          rim=+d.rim_mm||8,bore=+d.bore_diameter_mm||50,OD=pcd+2*r+2*rim,bd=+d.bottle_diameter_mm||54,bh=+d.bottle_height_mm||210;
+    /* Real holes: an extruded profile with the bore and every pocket as a Path hole.
+       (Dark inner cylinders only fake a hole on a dark background — on a light part
+       the solid top face shows straight through the illusion.) */
+    const prof=new THREE.Shape();prof.absarc(0,0,OD/2,0,Math.PI*2,false);
+    const boreHole=new THREE.Path();boreHole.absarc(0,0,bore/2,0,Math.PI*2,true);prof.holes.push(boreHole);
+    for(let i=0;i<n;i++){
+      const a=2*Math.PI*i/n,px=(pcd/2)*Math.cos(a),py=(pcd/2)*Math.sin(a);
+      const hole=new THREE.Path();hole.absarc(px,py,r,0,Math.PI*2,true);prof.holes.push(hole);
+    }
+    const disk=new THREE.Mesh(new THREE.ExtrudeGeometry(prof,{depth:th,bevelEnabled:false,curveSegments:64}),matBody());
+    disk.rotation.x=-Math.PI/2;disk.position.y=th/2;disk.name='disk';g.add(disk);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(bore/2,1.6,10,40),
+      new THREE.MeshStandardMaterial({color:0xff6b85,emissive:0xff2a4d,emissiveIntensity:.25,roughness:.5}));
+    ring.rotation.x=Math.PI/2;ring.position.y=th/2+1;g.add(ring);
+    const prm=new THREE.MeshStandardMaterial({color:0x3ddbb8,emissive:0x0d7c63,emissiveIntensity:.3,roughness:.45});
+    /* shape (x,y) extruded then rotated -90° about X lands at world (x, ..., -y) */
+    for(let i=0;i<n;i++){
+      const a=2*Math.PI*i/n,px=(pcd/2)*Math.cos(a),pz=-(pcd/2)*Math.sin(a);
+      const rr=new THREE.Mesh(new THREE.TorusGeometry(r,1.3,9,40),prm);
+      rr.position.set(px,th+1.5,pz);rr.rotation.x=Math.PI/2;rr.userData.explode=[0,th*1.6,0];g.add(rr);
+      if(i%4===0){
+        const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,bh*.55,30),matGhost());
+        b.position.set(px,bh*.27+th/2,pz);ghosts.add(b);
+      }
+      if(i===0)anchors.pocket=[px,th,pz];
+    }
+    const bc=new THREE.Mesh(new THREE.TorusGeometry(pcd/2,.8,6,140),
+      new THREE.MeshStandardMaterial({color:0x3ddbb8,transparent:true,opacity:.35,emissive:0x0a5f4c,emissiveIntensity:.25}));
+    bc.position.y=th+2;bc.rotation.x=Math.PI/2;g.add(bc);
+    const orim=new THREE.Mesh(new THREE.TorusGeometry(OD/2,2,8,140),
+      new THREE.MeshStandardMaterial({color:0x5b8cff,emissive:0x16307d,emissiveIntensity:.3,transparent:true,opacity:.6}));
+    orim.position.y=th+1;orim.rotation.x=Math.PI/2;g.add(orim);
+    anchors.bore=[0,th+4,0];
+    anchors.web=[(pcd/2)*Math.cos(Math.PI/n),th+2,-(pcd/2)*Math.sin(Math.PI/n)];
+    ghosts.userData.explode=[0,bh*.75,0];   // lift the containers clear of their pockets
     extent=OD/2;
   }
-  return{g,extent};
+  g.add(ghosts);
+  return{g,anchors};
 }
-function init3D(){
-  const host=document.getElementById('v3d'); if(!host||typeof THREE==='undefined')return;
+
+function rebuild(refit){
+  if(!glOK)return;
+  if(root){scene.remove(root);root.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+  const{g,anchors}=buildPart();
+  root=g;scene.add(g);
+  const gh=g.getObjectByName('ghosts');if(gh)gh.visible=ghostsOn;
+  buildHotspots(anchors);
+  if(refit)frame();
+  updateReadout();
+}
+function frame(){
+  const dist=(extent*1.25)/(Math.tan(camera.fov*Math.PI/360)*Math.min(1,camera.aspect||1));
+  flyTo([0,dist*.62,dist*.78]);
+}
+function flyTo(pos){
+  camAnim={from:camera.position.clone(),to:new THREE.Vector3(pos[0],pos[1],pos[2]),t:0};
+}
+function viewPreset(which){
+  const d=(extent*1.25)/(Math.tan(camera.fov*Math.PI/360)*Math.min(1,camera.aspect||1));
+  if(which==='top')flyTo([0,d*1.05,.001]);
+  else if(which==='front')flyTo([0,d*.12,d]);
+  else flyTo([d*.55,d*.62,d*.62]);
+  document.querySelectorAll('[data-vp]').forEach(b=>b.classList.toggle('on',b.dataset.vp===which));
+}
+
+/* hotspots: DOM markers projected from 3D anchors each frame */
+function buildHotspots(anchors){
+  const host=document.getElementById('studio');
+  document.querySelectorAll('.hs,.hscard').forEach(n=>n.remove());
+  HOTS=[];
+  (P.hotspots||[]).forEach((h,i)=>{
+    const a=anchors[h.at];if(!a)return;
+    const el=document.createElement('button');el.className='hs';el.type='button';el.title=h.title;
+    const card=document.createElement('div');card.className='hscard glass';
+    card.innerHTML=`<span class="x" onclick="closeHot(${i})">✕</span><h4>${esc(h.title)}</h4><p>${esc(h.body)}</p>`;
+    el.onclick=()=>toggleHot(i);
+    host.appendChild(el);host.appendChild(card);
+    HOTS.push({el,card,pos:new THREE.Vector3(a[0],a[1],a[2]),open:false});
+  });
+}
+function toggleHot(i){
+  HOTS.forEach((h,j)=>{if(j!==i){h.open=false;h.card.classList.remove('show');h.el.classList.remove('act');}});
+  const h=HOTS[i];h.open=!h.open;
+  h.card.classList.toggle('show',h.open);h.el.classList.toggle('act',h.open);
+  if(h.open){autoRot=false;syncTool('rot',false);}
+}
+function closeHot(i){const h=HOTS[i];if(!h)return;h.open=false;h.card.classList.remove('show');h.el.classList.remove('act');}
+function projectHotspots(){
+  const host=document.getElementById('studio');if(!host)return;
+  const w=host.clientWidth,hgt=host.clientHeight,cam=camera.position.clone();
+  HOTS.forEach(h=>{
+    const world=h.pos.clone();if(root)world.applyMatrix4(root.matrixWorld);
+    const v=world.clone().project(camera);
+    const x=(v.x*.5+.5)*w,y=(-v.y*.5+.5)*hgt;
+    const vis=v.z<1&&x>14&&x<w-14&&y>14&&y<hgt-14;
+    h.el.style.transform=`translate(${x}px,${y}px)`;
+    h.el.style.opacity=vis?1:0;
+    h.el.style.pointerEvents=vis?'auto':'none';
+    h.card.style.left=Math.min(Math.max(x,150),w-150)+'px';h.card.style.top=y+'px';
+    h.card.classList.toggle('below',y<170);   // flip under the marker when there is no room above
+    if(!vis&&h.open){h.open=false;h.card.classList.remove('show');h.el.classList.remove('act');}
+  });
+}
+
+function initStudio(){
+  const host=document.getElementById('studio'),cv=document.getElementById('cv');
+  if(!host||typeof THREE==='undefined'){fallback2D();return;}
   try{
-    const cv=document.getElementById('cv3d'),w=host.clientWidth||400,h=host.clientHeight||400;
-    scene=new THREE.Scene();scene.background=new THREE.Color(0xf0f3fa);
-    camera=new THREE.PerspectiveCamera(45,w/h,1,8000);
-    renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});renderer.setSize(w,h);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    const w=host.clientWidth||800,h=host.clientHeight||500;
+    scene=new THREE.Scene();
+    camera=new THREE.PerspectiveCamera(42,w/h,1,20000);
+    renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+    renderer.setSize(w,h);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
     if(typeof THREE.OrbitControls!=='function')throw new Error('controls unavailable');
-    controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;
-    scene.add(new THREE.AmbientLight(0xffffff,.75));
-    const dl=new THREE.DirectionalLight(0xffffff,.85);dl.position.set(300,600,400);scene.add(dl);
-    const dl2=new THREE.DirectionalLight(0xc9d8ff,.5);dl2.position.set(-400,-150,-300);scene.add(dl2);
-    const{g,extent}=build3D();grp=g;scene.add(g);
-    const dist=(extent*1.2)/(Math.tan(camera.fov*Math.PI/360)*Math.min(1,camera.aspect||1));
-    camera.position.set(0,.8*dist,.6*dist);controls.target.set(0,0,0);camera.lookAt(0,0,0);controls.update();
+    controls=new THREE.OrbitControls(camera,renderer.domElement);
+    controls.enableDamping=true;controls.dampingFactor=.075;controls.enablePan=false;
+    scene.add(new THREE.HemisphereLight(0xa8c0e8,0x0a0f1e,.42));
+    const k=new THREE.DirectionalLight(0xffffff,1.45);k.position.set(340,660,420);scene.add(k);
+    const f=new THREE.DirectionalLight(0x8fb0ff,.4);f.position.set(-420,-60,-320);scene.add(f);
+    const rim=new THREE.PointLight(0x3ddbb8,.55,4000);rim.position.set(-320,260,340);scene.add(rim);
     glOK=true;
-    (function loop(){requestAnimationFrame(loop);if(grp)grp.rotation.y+=.0022;controls.update();renderer.render(scene,camera);})();
-    window.addEventListener('resize',()=>{const W=host.clientWidth,H=host.clientHeight;if(!W||!H)return;camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);});
-  }catch(e){
-    console.warn('3D preview unavailable:',e.message);
-    host.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8a95ad;font-size:14px;padding:20px;text-align:center">3D preview needs an internet connection.<br/>The dimensioned drawing tab still works.</div>';
-    showView('2d');
-  }
+    camera.position.set(400,400,400);
+    rebuild(true);
+    let firstMove=true;
+    controls.addEventListener('start',()=>{
+      if(firstMove){firstMove=false;const hint=document.getElementById('hint');if(hint)hint.style.opacity='0';}
+      autoRot=false;syncTool('rot',false);
+    });
+    (function loop(){
+      requestAnimationFrame(loop);
+      if(camAnim){
+        camAnim.t=Math.min(1,camAnim.t+.045);
+        const e=1-Math.pow(1-camAnim.t,3);
+        camera.position.lerpVectors(camAnim.from,camAnim.to,e);
+        if(camAnim.t>=1)camAnim=null;
+      }
+      if(autoRot&&root&&!camAnim)root.rotation.y+=.0035;
+      explodeT+=(explode-explodeT)*.12;
+      if(root)root.children.forEach(c=>{
+        const ex=c.userData&&c.userData.explode;
+        if(!ex)return;
+        const b=c.userData.base||(c.userData.base=c.position.clone());
+        c.position.set(b.x+ex[0]*explodeT,b.y+ex[1]*explodeT,b.z+ex[2]*explodeT);
+      });
+      controls.update();renderer.render(scene,camera);projectHotspots();
+    })();
+    const ro=()=>{const W=host.clientWidth,H=host.clientHeight;if(!W||!H)return;camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);};
+    window.addEventListener('resize',ro);
+    document.addEventListener('fullscreenchange',()=>setTimeout(ro,60));
+  }catch(e){console.warn('3D unavailable:',e.message);fallback2D();}
+}
+function fallback2D(){
+  const host=document.getElementById('studio');if(!host)return;
+  showView('2d');
+  const t=document.getElementById('t3d');if(t){t.disabled=true;t.style.opacity=.4;}
+}
+function updateReadout(){
+  const el=document.getElementById('readout');if(!el||!P)return;
+  const d=design(),rows=(P.dims||[]).slice(0,4).map(x=>{
+    const changed=EDIT[x.k]!==undefined&&EDIT[x.k]!==BASE[x.k];
+    return `<div><b>${esc(x.l)}</b> <span class="rv" style="${changed?'color:var(--amber)':''}">${esc(fmt(x.k,d[x.k]))}</span></div>`;
+  }).join('');
+  el.innerHTML=rows;
+}
+function syncTool(name,on){const b=document.querySelector('[data-tool="'+name+'"]');if(b)b.classList.toggle('on',on);}
+function toggleRot(){autoRot=!autoRot;syncTool('rot',autoRot);}
+function toggleGhosts(){ghostsOn=!ghostsOn;syncTool('gh',ghostsOn);const g=root&&root.getObjectByName('ghosts');if(g)g.visible=ghostsOn;}
+function toggleExplode(){explode=explode?0:1;syncTool('ex',!!explode);}
+function toggleFS(){
+  const s=document.getElementById('studio');
+  if(!document.fullscreenElement){(s.requestFullscreen?s.requestFullscreen():null);s.classList.add('fs');}
+  else{document.exitFullscreen();s.classList.remove('fs');}
 }
 function showView(which){
-  const c=document.getElementById('cv3d'),s=document.getElementById('svgwrap');
-  if(c)c.style.display=which==='3d'?'block':'none';
-  if(s)s.style.display=which==='2d'?'block':'none';
-  const t3=document.getElementById('tab3d'),t2=document.getElementById('tab2d');
-  if(t3)t3.classList.toggle('on',which==='3d');
-  if(t2)t2.classList.toggle('on',which==='2d');
+  const cv=document.getElementById('cv'),sw=document.getElementById('svgwrap');
+  if(cv)cv.style.display=which==='3d'?'block':'none';
+  if(sw)sw.style.display=which==='2d'?'block':'none';
+  document.querySelectorAll('.hs,.hscard').forEach(n=>n.style.display=which==='3d'?'':'none');
+  const a=document.getElementById('t3d'),b=document.getElementById('t2d');
+  if(a)a.classList.toggle('on',which==='3d');if(b)b.classList.toggle('on',which==='2d');
 }
 function downloadDrawing(){
   if(!P||!P.svg){toast('No drawing available');return;}
@@ -281,158 +593,279 @@ function downloadDrawing(){
   document.body.appendChild(a);a.click();a.remove();
 }
 
-/* ---------- actions back to engineering ---------- */
-function sendRequest(){
-  const ta=document.getElementById('reqtext'),txt=ta.value.trim();
-  if(!txt){ta.focus();toast('Tell us what to change first');return;}
-  const answers=[...document.querySelectorAll('.qans')].map(el=>({q:el.dataset.q,a:el.value.trim()})).filter(x=>x.a);
-  const full=txt+(answers.length?'\n\nAnswers to your questions:\n'+answers.map(x=>'- '+x.q+' → '+x.a).join('\n'):'');
-  localStorage.setItem(KEY_REQUEST,JSON.stringify({ts:Date.now(),text:full,part_type:P.part_type}));
-  localStorage.removeItem(KEY_DECISION);
-  ta.value='';
-  toast('Sent to engineering ✓');
-  render();
+/* =============================================================
+   Configurator — every change re-checked by the real engine
+   ============================================================= */
+function setParam(k,v){
+  EDIT[k]=v;
+  const c=(P.controls||[]).find(x=>x.k===k);
+  const el=document.getElementById('val_'+k);
+  if(el){el.textContent=fmtCtl(c,v);el.classList.toggle('changed',v!==BASE[k]);}
+  if(!rebuildQueued){rebuildQueued=true;requestAnimationFrame(()=>{rebuildQueued=false;rebuild(false);});}
+  renderDiff();
+  scheduleCheck();
 }
-function approve(){
-  const answers=[...document.querySelectorAll('.qans')].map(el=>({q:el.dataset.q,a:el.value.trim()})).filter(x=>x.a);
-  const note=answers.length?'Approved with answers:\n'+answers.map(x=>'- '+x.q+' → '+x.a).join('\n'):'Approved as presented.';
-  localStorage.setItem(KEY_DECISION,JSON.stringify({ts:Date.now(),decision:'approved',note,part_type:P.part_type}));
-  localStorage.removeItem(KEY_REQUEST);
-  toast('Approved — thank you ✓');
-  render();
+function fmtCtl(c,v){return (c&&c.step<1?(+v).toFixed(2):(+v).toFixed(0))+(/_mm$/.test(c.k)?' mm':(/_deg$/.test(c.k)?'°':''));}
+function setMaterial(m){
+  EDIT.material_id=m;
+  document.querySelectorAll('[data-mat]').forEach(b=>b.classList.toggle('on',b.dataset.mat===m));
+  renderDiff();scheduleCheck();
+}
+function changedEntries(){
+  return Object.keys(EDIT).filter(k=>String(EDIT[k])!==String(BASE[k]))
+    .map(k=>({k,from:BASE[k],to:EDIT[k],label:(P.controls||[]).find(c=>c.k===k)?(P.controls||[]).find(c=>c.k===k).l:(FIELD_WORDS[k]||k)}));
+}
+function renderDiff(){
+  const el=document.getElementById('diff');if(!el)return;
+  const ch=changedEntries();
+  el.classList.toggle('show',ch.length>0);
+  if(!ch.length){el.innerHTML='';const r=document.getElementById('resetbtn');if(r)r.style.display='none';return;}
+  el.innerHTML='<div style="font-weight:700;margin-bottom:7px;color:var(--ink)">You changed</div>'
+    +ch.map(c=>`<div>${esc(c.label)}: ${esc(fmt(c.k,c.from))} → <b>${esc(fmt(c.k,c.to))}</b></div>`).join('');
+  const r=document.getElementById('resetbtn');if(r)r.style.display='inline-flex';
+  updateReadout();
+}
+function resetEdits(){
+  EDIT={};
+  (P.controls||[]).forEach(c=>{
+    const s=document.getElementById('sl_'+c.k);if(s){s.value=BASE[c.k];}
+    const v=document.getElementById('val_'+c.k);if(v){v.textContent=fmtCtl(c,BASE[c.k]);v.classList.remove('changed');}
+  });
+  document.querySelectorAll('[data-mat]').forEach(b=>b.classList.toggle('on',b.dataset.mat===BASE.material_id));
+  rebuild(false);renderDiff();scheduleCheck();
+  toast('Back to our design');
+}
+function scheduleCheck(){
+  clearTimeout(checkTimer);
+  const v=document.getElementById('verdict');
+  if(v&&changedEntries().length)v.innerHTML='<div class="vt"><span class="spin"></span> Checking your changes…</div>';
+  checkTimer=setTimeout(runCheck,420);
+}
+async function runCheck(){
+  const el=document.getElementById('verdict');if(!el)return;
+  const ch=changedEntries();
+  if(!ch.length){renderVerdict(P.verdict==='accept',P.verdict==='accept'
+    ? 'This is the design our engineers checked and approved for your line.'
+    : 'Our engineers are still resolving a few points on this design.',P.verdict==='unvalidated');return;}
+  if(!P.backend){
+    el.className='verdict';
+    el.innerHTML='<div class="vt">✎ Changes noted</div><div class="vb">We will check these against your machine and confirm — send them with the button below.</div>';
+    return;
+  }
+  try{
+    const d=design();
+    const r=await fetch(P.backend+'/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({part_type:P.part_type,params:d,ovality_mm:d.ovality_mm})});
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'check failed');
+    lastCheck=j;
+    const ok=j.verdict==='accept';
+    const why=ok?'Your changes still pass every safety and machine check for your line.'
+      :(j.reasons||[]).map(issueWords)[0]||'This combination will not run on your line.';
+    renderVerdict(ok,why,false);
+  }catch(e){
+    el.className='verdict';
+    el.innerHTML='<div class="vt">✎ Changes noted</div><div class="vb">We could not check these right now — send them and an engineer will confirm.</div>';
+  }
+}
+function renderVerdict(ok,text,pending){
+  const el=document.getElementById('verdict');if(!el)return;
+  el.className='verdict '+(pending?'':(ok?'ok':'bad'));
+  el.innerHTML=`<div class="vt">${pending?'⏳ In progress':(ok?'✓ This will run on your line':'✕ This would cause a problem')}</div><div class="vb">${esc(text)}</div>`;
 }
 
-/* ---------- page ---------- */
+/* ---- actions ---- */
+function sendRequest(){
+  const ta=document.getElementById('reqtext'),txt=ta.value.trim(),ch=changedEntries();
+  if(!txt&&!ch.length){ta.focus();toast('Adjust the design or tell us what to change');return;}
+  const answers=[...document.querySelectorAll('.qans')].map(e=>({q:e.dataset.q,a:e.value.trim()})).filter(x=>x.a);
+  let full=txt||'Please apply the changes I made on the review page.';
+  if(ch.length)full+='\n\nChanges I made:\n'+ch.map(c=>`- ${c.label}: ${fmt(c.k,c.from)} → ${fmt(c.k,c.to)}`).join('\n');
+  if(answers.length)full+='\n\nAnswers to your questions:\n'+answers.map(x=>`- ${x.q} → ${x.a}`).join('\n');
+  localStorage.setItem(KEY_REQUEST,JSON.stringify({ts:Date.now(),text:full,part_type:P.part_type,
+    adjustments:ch.reduce((a,c)=>(a[c.k]=c.to,a),{}),checked:lastCheck?lastCheck.verdict:null}));
+  localStorage.removeItem(KEY_DECISION);
+  ta.value='';toast('Sent to engineering ✓');render();
+}
+function approve(){
+  const answers=[...document.querySelectorAll('.qans')].map(e=>({q:e.dataset.q,a:e.value.trim()})).filter(x=>x.a);
+  const ch=changedEntries();
+  if(ch.length&&!confirm('You have unsent changes. Approve our original design instead?\n\n(Use “Request these changes” to send yours.)'))return;
+  const note=answers.length?'Approved with answers:\n'+answers.map(x=>`- ${x.q} → ${x.a}`).join('\n'):'Approved as presented.';
+  localStorage.setItem(KEY_DECISION,JSON.stringify({ts:Date.now(),decision:'approved',note,part_type:P.part_type}));
+  localStorage.removeItem(KEY_REQUEST);
+  toast('Approved — thank you ✓');render();
+}
+
+/* =============================================================
+   Page
+   ============================================================= */
 function render(){
   const app=document.getElementById('app');
   try{P=JSON.parse(localStorage.getItem(KEY_PAYLOAD)||'null');}catch(e){P=null;}
   if(!P){
-    app.innerHTML=`<div class="card empty"><div class="big">📐</div>
-      <h1>Nothing to review yet</h1>
-      <p class="lede" style="margin:10px auto 0">Your Morrison engineer will send a design here.
-      When they do, this page will show what is being made for you, how it looks in 3D, and anything we still need from you.</p>
-      <div class="row" style="justify-content:center"><button class="btn btn-primary noprint" onclick="location.reload()">↻ Check again</button></div></div>`;
+    app.innerHTML=`<div class="card empty reveal in" style="margin-top:60px"><div class="big">📐</div>
+      <h1 style="font-size:36px">Nothing to review yet</h1>
+      <p class="lede" style="margin:16px auto 0">Your Morrison engineer will send a design here. You will be able to explore it in 3D,
+      try changes, and see straight away whether they will run on your line.</p>
+      <div style="margin-top:26px"><button class="btn btn-cta" onclick="location.reload()">↻ Check again</button></div></div>`;
     return;
   }
-  const accepted=P.verdict==='accept';
-  const dec=(()=>{try{return JSON.parse(localStorage.getItem(KEY_DECISION)||'null');}catch(e){return null;}})();
-  const req=(()=>{try{return JSON.parse(localStorage.getItem(KEY_REQUEST)||'null');}catch(e){return null;}})();
-  const d=P.design||{};
-  const dims=(P.dims&&P.dims.length?P.dims:Object.keys(d).map(k=>({k,l:FIELD_WORDS[k]||k,u:''})))
-    .filter(x=>d[x.k]!=null)
-    .map(x=>`<tr><td>${esc(x.l)}</td><td>${esc(fmt(x.k,d[x.k]))}${x.u&&typeof d[x.k]==='number'?' '+esc(x.u):''}</td></tr>`).join('');
-  const context=['material_id','machine_id','target_speed_cpm','bottle_diameter_mm','bottle_height_mm']
-    .filter(k=>d[k]!=null).map(k=>`<tr><td>${esc(FIELD_WORDS[k]||k)}</td><td>${esc(fmt(k,d[k]))}</td></tr>`).join('');
+  BASE={...P.design};EDIT={};lastCheck=null;
+  const d=P.design,accepted=P.verdict==='accept',pending=P.verdict==='unvalidated';
+  let dec=null,req=null;
+  try{dec=JSON.parse(localStorage.getItem(KEY_DECISION)||'null');req=JSON.parse(localStorage.getItem(KEY_REQUEST)||'null');}catch(e){}
 
-  const statusChip=dec?`<div class="status s-ok">✓ You approved this design</div>`
-    :req?`<div class="status s-warn">✎ Your change request is with engineering</div>`
-    :accepted?`<div class="status s-ok">✓ Ready for your review</div>`
-    :`<div class="status s-warn">⏳ Our engineers are still working on this</div>`;
+  const statusChip=dec?'<div class="chip ok"><span class="dot"></span>You approved this design</div>'
+    :req?'<div class="chip warn live"><span class="dot"></span>Your change request is with engineering</div>'
+    :pending?'<div class="chip warn live"><span class="dot"></span>Still being checked</div>'
+    :accepted?'<div class="chip ok"><span class="dot"></span>Ready for your review</div>'
+    :'<div class="chip warn live"><span class="dot"></span>Our engineers are still working on this</div>';
+
+  const dims=(P.dims||[]).filter(x=>d[x.k]!=null)
+    .map(x=>`<div><span class="k">${esc(x.l)}</span><span class="v" id="dim_${esc(x.k)}">${esc(fmt(x.k,d[x.k]))}</span></div>`).join('');
+  const ctx=['material_id','machine_id','target_speed_cpm','bottle_diameter_mm','bottle_height_mm']
+    .filter(k=>d[k]!=null).map(k=>`<div><span class="k">${esc(FIELD_WORDS[k]||k)}</span><span class="v">${esc(fmt(k,d[k]))}</span></div>`).join('');
+
+  const controls=(P.controls||[]).filter(c=>d[c.k]!=null).map(c=>`
+    <div class="ctl" id="ctl_${esc(c.k)}">
+      <div class="ctl-top">
+        <span class="ctl-l">${esc(c.l)} <button class="qmark" onclick="document.getElementById('ctl_${esc(c.k)}').classList.toggle('open')" title="What is this?">?</button></span>
+        <span class="ctl-v" id="val_${esc(c.k)}">${esc(fmtCtl(c,d[c.k]))}</span>
+      </div>
+      <input type="range" id="sl_${esc(c.k)}" min="${c.min}" max="${c.max}" step="${c.step}" value="${d[c.k]}"
+             oninput="setParam('${esc(c.k)}',parseFloat(this.value))" />
+      <div class="ends"><span>${esc(c.lo||'')}</span><span>${esc(c.hi||'')}</span></div>
+      <div class="help">${esc(c.help||'')}</div>
+    </div>`).join('');
+
+  const mats=(P.materials||[]).map(m=>{
+    const i=MAT_INFO[m]||{c:'#dde',d:''};
+    return `<button class="sw ${m===d.material_id?'on':''}" data-mat="${esc(m)}" onclick="setMaterial('${esc(m)}')">
+      ${m===d.material_id?'<span class="tickmk">✓</span>':''}
+      <div class="puck" style="background:linear-gradient(140deg,${i.c},${i.c}88)"></div>
+      <div class="nm">${esc(m)}</div><div class="ds">${esc(i.d)}</div></button>`;
+  }).join('');
 
   const issues=(!accepted&&P.issues&&P.issues.length)
-    ? `<div class="card"><h2>What we are still resolving</h2>
+    ? `<div class="card reveal"><h2><span class="ic">⚠</span>What we are still resolving</h2>
         ${P.issues.map(i=>`<div class="issue">${esc(issueWords(i))}</div>`).join('')}
-        <p class="muted">Our automatic safety checks flagged these, so this design is not being offered to you yet — the team is adjusting it now.</p></div>`
-    : '';
+        <p class="muted" style="margin-top:12px">Our automatic checks flagged these, so this is not final yet — the team is adjusting it now.</p></div>`:'';
 
   const questions=(P.open_questions&&P.open_questions.length)
-    ? `<div class="card"><h2>We need a little more from you</h2>
-        ${P.open_questions.map((q,i)=>`<div class="qbox"><div class="q">${esc(q)}</div>
+    ? `<div class="card wide reveal"><h2><span class="ic">💬</span>We need a little more from you</h2>
+        ${P.open_questions.map(q=>`<div class="qwrap"><div class="q"><span>?</span><span>${esc(q)}</span></div>
           <textarea class="qans" data-q="${esc(q)}" rows="2" placeholder="Your answer…"></textarea></div>`).join('')}
-        <p class="muted">Answer what you can — anything you leave blank we will confirm with you by phone.</p></div>`
-    : '';
+        <p class="muted">Anything you leave blank we will confirm with you by phone.</p></div>`:'';
 
-  const checks=(P.checks||[]).map(c=>`<li><span class="tick ${c.pass?'t-ok':'t-bad'}">${c.pass?'✓':'!'}</span><span>${esc(checkWords(c.name))}</span></li>`).join('');
-
+  const checks=(P.checks||[]).map(c=>`<li><span class="tk ${c.pass?'y':'n'}">${c.pass?'✓':'!'}</span><span>${esc(checkWords(c.name))}</span></li>`).join('');
   const stepNames={'1':'Reading your request','2':'Comparing with past parts','3':'Designing options','4':'Preparing the CAD model','5':'Safety & standards checks','6':'Your review','7':'Applying your changes'};
   const steps=(P.stages||[]).map(s=>{
-    const done=s.status==='done'||s.status==='none';
-    const now=s.status==='run';
-    return `<li><span class="sdot ${done?'done':(now?'now':'')}">${done?'✓':(now?'●':'')}</span>
-      <div><div class="stitle">${esc(stepNames[s.id]||s.name)}</div>
-      <div class="ssub">${done?'Complete':(now?'In progress':'Not started')}</div></div></li>`;
+    const done=s.status==='done'||s.status==='none',now=s.status==='run';
+    return `<li><span class="sd ${done?'done':(now?'now':'')}">${done?'✓':(now?'●':'')}</span>
+      <div><div class="st">${esc(stepNames[s.id]||s.name)}</div><div class="ss">${done?'Complete':(now?'In progress':'Not started')}</div></div></li>`;
   }).join('');
 
   app.innerHTML=`
-  <h1>Your ${esc(P.label||'change part')}</h1>
-  <p class="lede">${esc(P.summary||'')}</p>
-  <div class="row" style="margin-bottom:22px">${statusChip}</div>
-
-  ${dec?`<div class="card" style="border-color:#bfe5d5;background:#f4fbf8"><strong>Approved on ${esc(new Date(dec.ts).toLocaleString())}.</strong> Our team will confirm lead time and pricing separately. You can still send a change below if you need one.</div>`:''}
-  ${req?`<div class="card" style="border-color:#f3dcb5;background:#fffaf1"><strong>Change request sent ${esc(new Date(req.ts).toLocaleString())}:</strong><br/>“${esc(req.text)}”<br/><span class="muted">An engineer is applying this now — refresh this page after they update the design.</span></div>`:''}
-
-  <div class="grid2">
-    <div class="card">
-      <h2>How it looks</h2>
-      <div class="vtabs noprint">
-        <button class="vtab on" id="tab3d" onclick="showView('3d')">3D model</button>
-        <button class="vtab" id="tab2d" onclick="showView('2d')">Dimensioned drawing</button>
-      </div>
-      <div class="viewer" id="v3d">
-        <canvas id="cv3d"></canvas>
-        <div class="svgwrap" id="svgwrap">${P.svg||''}</div>
-      </div>
-      <p class="hint">Drag to rotate · scroll to zoom. The pale shapes are your containers, shown for scale.</p>
+  <section class="hero">
+    <div style="flex:1;min-width:300px">
+      <div class="eyebrow">Your change part</div>
+      <h1>${esc(P.label||'Change part')}</h1>
+      <p class="lede">${esc(P.summary||'')}</p>
+      <div class="chips">${statusChip}
+        ${d.machine_id?`<div class="chip">🏭 ${esc(d.machine_id)}</div>`:''}
+        ${d.target_speed_cpm?`<div class="chip">⚡ ${esc(d.target_speed_cpm)} / min</div>`:''}
+        ${d.material_id?`<div class="chip">🧪 ${esc(d.material_id)}</div>`:''}</div>
     </div>
+  </section>
 
+  ${dec?`<div class="card reveal" style="border-color:rgba(61,219,184,.35);background:rgba(61,219,184,.08);margin-bottom:22px">
+    <strong>Approved ${esc(new Date(dec.ts).toLocaleString())}.</strong> We will confirm lead time and pricing separately. You can still send a change below.</div>`:''}
+  ${req?`<div class="card reveal" style="border-color:rgba(255,179,71,.35);background:rgba(255,179,71,.07);margin-bottom:22px">
+    <strong>Change request sent ${esc(new Date(req.ts).toLocaleString())}</strong><div style="color:var(--ink2);margin-top:6px">“${esc(req.text)}”</div>
+    <div class="muted" style="margin-top:8px">An engineer is applying this now — refresh after they update the design.</div></div>`:''}
+
+  <div class="split">
     <div>
-      <div class="card">
-        <h2>Main dimensions</h2>
-        <table class="dims">${dims||'<tr><td>—</td><td>—</td></tr>'}</table>
+      <div class="studio reveal" id="studio">
+        <canvas id="cv"></canvas>
+        <div id="svgwrap">${P.svg||''}</div>
+        <div class="ov glass tools noprint">
+          <button class="tool on" id="t3d" onclick="showView('3d')">◍ 3D</button>
+          <button class="tool" id="t2d" onclick="showView('2d')">▤ Drawing</button>
+        </div>
+        <div class="ov glass tools-r noprint">
+          <button class="tool on" data-vp="iso" onclick="viewPreset('iso')">Iso</button>
+          <button class="tool" data-vp="top" onclick="viewPreset('top')">Top</button>
+          <button class="tool" data-vp="front" onclick="viewPreset('front')">Front</button>
+          <span style="width:1px;background:var(--line2);margin:4px 3px"></span>
+          <button class="tool on" data-tool="rot" onclick="toggleRot()" title="Auto-rotate">⟳</button>
+          <button class="tool" data-tool="ex" onclick="toggleExplode()" title="Exploded view">⇱</button>
+          <button class="tool on" data-tool="gh" onclick="toggleGhosts()" title="Show containers">🍾</button>
+          <button class="tool" onclick="toggleFS()" title="Fullscreen">⛶</button>
+        </div>
+        <div class="ov glass readout" id="readout"></div>
+        <div class="ov hint" id="hint">Drag to rotate · tap the dots to explore</div>
       </div>
-      <div class="card">
-        <h2>Made for your line</h2>
-        <table class="dims">${context}</table>
+    </div>
+
+    <div class="sticky">
+      <div class="card reveal" id="configure">
+        <h2><span class="ic">🎛</span>Try it your way</h2>
+        <p class="muted" style="margin:-8px 0 16px">Move a slider and the model updates. We check every change against your machine instantly.</p>
+        ${controls||'<p class="muted">No adjustable options on this part.</p>'}
+        <div style="font-size:14px;font-weight:700;margin:22px 0 11px">Material</div>
+        <div class="swatches">${mats}</div>
+        <div class="verdict" id="verdict" style="margin-top:20px"></div>
+        <div class="diff" id="diff"></div>
+        <button class="btn sm" id="resetbtn" style="display:none;margin-top:14px" onclick="resetEdits()">↺ Back to our design</button>
       </div>
     </div>
   </div>
 
-  ${issues}
-  ${questions}
+  <div class="bento">
+    <div class="card reveal"><h2><span class="ic">📐</span>Main dimensions</h2><div class="kv">${dims||'<div><span class="k">—</span><span class="v">—</span></div>'}</div></div>
+    <div class="card reveal"><h2><span class="ic">🏭</span>Made for your line</h2><div class="kv">${ctx}</div></div>
+    ${issues}
+    ${questions}
+    <div class="card wide reveal"><h2><span class="ic">✓</span>What we checked for you</h2>
+      <ul class="checks">${checks}</ul>
+      <p class="muted" style="margin-top:16px">Automatic engineering checks against machine ratings, container tolerances and food-contact standards — run on every design before it reaches you.</p></div>
 
-  <div class="card">
-    <h2>What we checked for you</h2>
-    <ul class="checks">${checks}</ul>
-    <p class="muted" style="margin-top:14px">These are automatic engineering checks against machine ratings, container tolerances and food-contact standards — run on every design before it reaches you.</p>
-  </div>
-
-  <div class="card noprint">
-    <h2>Your decision</h2>
-    <div class="callout" style="margin-bottom:16px">Happy with it? Approve and we will proceed. Need something different? Just describe it in your own words — no drawings or technical terms needed.</div>
-    <textarea class="req" id="reqtext" placeholder="For example: “Can the pockets be a bit looser, our bottles vary a little” or “We would prefer a different material”"></textarea>
-    <div class="row">
-      <button class="btn btn-ok" onclick="approve()">✓ Approve this design</button>
-      <button class="btn btn-primary" onclick="sendRequest()">✎ Request a change</button>
-      <span class="muted">Your engineer sees this straight away.</span>
+    <div class="card wide reveal" id="decide">
+      <h2><span class="ic">✍</span>Your decision</h2>
+      <textarea class="req" id="reqtext" rows="3" placeholder="Anything else? For example: “our bottles vary a little, can you allow for that” — plain words are fine."></textarea>
+      <div style="display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin-top:15px">
+        <button class="btn btn-ok" onclick="approve()">✓ Approve this design</button>
+        <button class="btn btn-cta" onclick="sendRequest()">✎ Request these changes</button>
+        <span class="muted">Your engineer sees this straight away.</span>
+      </div>
     </div>
+
+    <div class="card reveal"><h2><span class="ic">📍</span>Where we are</h2><ul class="steps">${steps||'<li class="muted">Not started</li>'}</ul></div>
+    <div class="card reveal"><h2><span class="ic">📖</span>Jargon, translated</h2>
+      <details><summary>What do these words mean?</summary>
+        <dl>
+          <dt>Change part</dt><dd>The parts swapped when you change container size or shape.</dd>
+          <dt>Starwheel</dt><dd>A rotating wheel with pockets that carries each container through the machine.</dd>
+          <dt>Feed screw</dt><dd>A spiral screw at the infeed that spaces containers and feeds them in one at a time.</dd>
+          <dt>Guide rail</dt><dd>A curved rail that keeps containers seated in the starwheel pockets.</dd>
+          <dt>Clearance</dt><dd>The gap between your container and the part — too tight it jams, too loose it rattles.</dd>
+          <dt>Containers per minute</dt><dd>Your line speed.</dd>
+        </dl></details></div>
   </div>
 
-  <div class="card">
-    <h2>Where we are</h2>
-    <ul class="steps">${steps||'<li class="muted">Not started yet</li>'}</ul>
-  </div>
+  <p class="muted" style="text-align:center;margin-top:34px">Prepared ${esc(new Date(P.generatedAt||Date.now()).toLocaleString())} · Morrison Container Handling Solutions<br/>
+  Dimensions shown for approval. Manufacturing tolerances, cost and internal engineering data are not included.</p>`;
 
-  <div class="card">
-    <details class="glossary"><summary>What do these words mean?</summary>
-      <dl>
-        <dt>Change part</dt><dd>The parts on your machine that get swapped when you change container size or shape.</dd>
-        <dt>Starwheel</dt><dd>A rotating wheel with pockets that carries each container through the machine.</dd>
-        <dt>Feed screw (timing screw)</dt><dd>A spiral screw at the infeed that spaces containers evenly and feeds them in one at a time.</dd>
-        <dt>Guide rail</dt><dd>A curved rail that keeps containers seated in the starwheel pockets as they go round.</dd>
-        <dt>Pitch circle diameter (PCD)</dt><dd>The diameter of the circle the pocket centres sit on.</dd>
-        <dt>Clearance</dt><dd>The small gap between your container and the part — too tight and it jams, too loose and it rattles.</dd>
-        <dt>Containers per minute</dt><dd>Your line speed: how many containers pass through in a minute.</dd>
-      </dl>
-    </details>
-  </div>
-
-  <p class="muted" style="text-align:center;margin-top:26px">Prepared ${esc(new Date(P.generatedAt||Date.now()).toLocaleString())} · Morrison Container Handling Solutions<br/>
-  Dimensions shown for your approval. Manufacturing tolerances, cost and internal engineering data are not included on this page.</p>`;
-
-  setTimeout(()=>{ if(P.svg) init3D(); else showView('2d'); },0);
+  setTimeout(()=>{
+    initStudio();
+    runCheck();
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.08});
+    document.querySelectorAll('.reveal').forEach(n=>io.observe(n));
+  },0);
 }
-
-window.addEventListener('storage',e=>{ if(e.key===KEY_PAYLOAD) render(); });
+window.addEventListener('storage',e=>{if(e.key===KEY_PAYLOAD)render();});
 render();
 </script>
 </body>
