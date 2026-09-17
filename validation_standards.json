@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Starwheel Manufacturing CAD Validation Standards Registry",
+  "version": "1.0.0",
+  "description": "Authoritative engineering constraints, machinery ratings, and regulatory standards for bottle-capper starwheel validation.",
+  "metadata": {
+    "last_updated": "2026-09-06",
+    "scope": "Rotary starwheels and packaging container handling change parts"
+  },
+  "change_part_types": {
+    "starwheel": {
+      "description": "Rotary transfer wheel with N pockets on a bolt circle (PCD); carries containers through the capper turret.",
+      "geometry_parameters": ["pocket_count", "pcd_mm", "pocket_radius_mm", "pocket_clearance_mm", "wheel_thickness_mm", "bore_diameter_mm", "rim_mm"],
+      "cadquery_strategy": "disk extrude -> bore cutThruAll -> N pocket circles cutThruAll on the PCD"
+    },
+    "feed_screw": {
+      "description": "Infeed timing screw: helical flight on a root cylinder that separates and paces containers into the starwheel at exactly one container per pitch per start.",
+      "geometry_parameters": ["pitch_mm", "outer_diameter_mm", "root_diameter_mm", "length_mm", "starts", "flight_thickness_mm", "handedness"],
+      "cadquery_strategy": "root cylinder extrude -> rectangular flight profile swept along cq.Wire.makeHelix(pitch, length, root_radius) with isFrenet=True (one helix per start) -> union. twistExtrude is NOT valid: it only rotates the end face and cannot form a multi-turn helix (verified on OCCT)."
+    },
+    "guide_rail": {
+      "description": "Curved outer guide rail that holds containers in the starwheel pockets around part of the turret arc.",
+      "geometry_parameters": ["rail_radius_mm", "arc_angle_deg", "rail_height_mm", "thickness_mm", "contact_height_mm", "mating_pcd_mm"],
+      "cadquery_strategy": "annular-sector sketch (inner arc, outer arc via threePointArc) -> extrude by rail_height_mm"
+    }
+  },
+  "machinery_catalog": {
+    "CAP-12": {
+      "manufacturer": "Morrison / Packaging Alliance",
+      "turret_type": "Rotary Capper",
+      "rated_max_speed_cpm": 300,
+      "standard_pcd_range_mm": [480, 560],
+      "standard_bore_diameter_mm": 50.0,
+      "max_pocket_count": 12,
+      "infeed_screw_drive": {"rated_torque_nm": 8.0, "max_screw_rpm": 300},
+      "reference_source": "Morrison Container Handling Solutions Equipment Manual Table 3.2"
+    },
+    "CAP-16": {
+      "manufacturer": "Morrison / Packaging Alliance",
+      "turret_type": "Rotary Capper",
+      "rated_max_speed_cpm": 450,
+      "standard_pcd_range_mm": [600, 660],
+      "standard_bore_diameter_mm": 50.0,
+      "max_pocket_count": 16,
+      "infeed_screw_drive": {"rated_torque_nm": 12.0, "max_screw_rpm": 350},
+      "reference_source": "Morrison Container Handling Solutions Capper Series Spec 16-PCD620 (Back-solved from 380 CPM at 0.844 utilisation = 450.2 CPM)"
+    },
+    "CAP-24": {
+      "manufacturer": "Morrison / Packaging Alliance",
+      "turret_type": "High-Speed Rotary Capper",
+      "rated_max_speed_cpm": 720,
+      "standard_pcd_range_mm": [880, 960],
+      "standard_bore_diameter_mm": 60.0,
+      "max_pocket_count": 24,
+      "infeed_screw_drive": {"rated_torque_nm": 20.0, "max_screw_rpm": 450},
+      "reference_source": "PMMI Packaging Machinery High-Speed Turret Design Guide"
+    },
+    "AROL-EURO-16": {
+      "manufacturer": "Arol Closures System",
+      "turret_type": "Euro-PK Rotary Capper",
+      "rated_max_speed_cpm": 480,
+      "standard_pcd_range_mm": [600, 680],
+      "standard_bore_diameter_mm": 55.0,
+      "max_pocket_count": 16,
+      "infeed_screw_drive": {"rated_torque_nm": 12.0, "max_screw_rpm": 350},
+      "reference_source": "Arol PK Series Technical Data Sheet"
+    },
+    "ZALKIN-CA-16": {
+      "manufacturer": "Zalkin Capping Systems",
+      "turret_type": "CA-16 Turret Capper",
+      "rated_max_speed_cpm": 460,
+      "standard_pcd_range_mm": [620, 650],
+      "standard_bore_diameter_mm": 50.0,
+      "max_pocket_count": 16,
+      "infeed_screw_drive": {"rated_torque_nm": 12.0, "max_screw_rpm": 360},
+      "reference_source": "Zalkin Rotary Capper Operating & Maintenance Guide"
+    }
+  },
+  "container_defaults": {
+    "filled_mass_kg": 0.55,
+    "friction_coefficient_container_on_uhmw": 0.25,
+    "accumulation_backpressure_n": 40.0,
+    "bottle_height_mm": 210.0,
+    "notes": "Defaults for load/torque estimates when the customer spec omits them: 500 ml PET filled mass, PET-on-UHMW sliding friction, and typical infeed accumulation back-pressure from a backed-up conveyor."
+  },
+  "feed_screw_thresholds": {
+    "pocket_width_rule": "pocket_width = pitch - flight_thickness; clearance = pocket_width - bottle_diameter; effective_clearance = clearance - ovality/2 (strict > min_effective_clearance_mm, same ISBT floor as starwheel pockets)",
+    "max_pocket_clearance_mm": 6.0,
+    "min_flight_engagement_ratio": 0.20,
+    "min_flight_thickness_mm": 6.0,
+    "min_bottles_engaged": 3,
+    "dynamic_load_factor": 1.5,
+    "torque_model": "T = dynamic_load_factor * (bottles_engaged * mu * m * g + accumulation_backpressure_n) * (outer_diameter/2); screw_rpm = target_cpm / starts",
+    "reference_source": "Morrison Feed Screw Design Standard FS-DS-02 (pocket timing tolerance, flight engagement, drive sizing)"
+  },
+  "guide_rail_thresholds": {
+    "running_gap_rule": "gap = rail_inner_radius - mating_pcd/2 - bottle_diameter/2; effective_gap = gap - ovality/2 (strict > min_effective_clearance_mm)",
+    "max_running_gap_mm": 5.0,
+    "min_arc_angle_deg": 20.0,
+    "max_arc_angle_deg": 180.0,
+    "contact_height_band_of_bottle_height": [0.25, 0.75],
+    "min_thickness_mm": 6.0,
+    "min_rail_height_mm": 15.0,
+    "load_model": "radial load = bottles_in_arc * m * omega^2 * (pcd/2), omega from starwheel rpm = cpm / N; must not exceed material allowable_contact_load_n",
+    "reference_source": "Morrison Guide Rail Design Standard GR-DS-01 (rail wrap limit for changeover access, contact on cylindrical label panel only)"
+  },
+  "food_contact_materials": {
+    "UHMW-PE": {
+      "name": "Ultra-High Molecular Weight Polyethylene",
+      "compliant": true,
+      "wear_class": "low_friction_high_wear_resistance",
+      "fda_cfr_citation": "21 CFR § 177.1520 (Olefin polymers)",
+      "eu_regulation_citation": "EU Regulation (EU) No 10/2011, Annex I (FCM No. 233)",
+      "allowable_contact_load_n": 150.0,
+      "operating_temperature_max_c": 82,
+      "notes": "Industry standard for starwheel pockets; self-lubricating, non-marking on PET and glass."
+    },
+    "POM": {
+      "name": "Polyoxymethylene / Acetal (Delrin)",
+      "compliant": true,
+      "wear_class": "high_stiffness_low_friction",
+      "fda_cfr_citation": "21 CFR § 177.2470 (Polyoxymethylene copolymer / homopolymer)",
+      "eu_regulation_citation": "EU Regulation (EU) No 10/2011, Annex I (FCM No. 343)",
+      "allowable_contact_load_n": 200.0,
+      "operating_temperature_max_c": 90,
+      "notes": "High dimensional stability; ideal for precision pocket geometry and hot-fill lines."
+    },
+    "PTFE": {
+      "name": "Polytetrafluoroethylene (Teflon)",
+      "compliant": true,
+      "wear_class": "ultra_low_friction_moderate_wear",
+      "fda_cfr_citation": "21 CFR § 177.1550 (Perfluorocarbon resins)",
+      "eu_regulation_citation": "EU Regulation (EU) No 10/2011, Annex I (FCM No. 278)",
+      "allowable_contact_load_n": 80.0,
+      "operating_temperature_max_c": 260,
+      "notes": "Chemically inert; used in aggressive CIP (clean-in-place) washdown and acidic beverage bottling."
+    },
+    "PEEK": {
+      "name": "Polyetheretherketone",
+      "compliant": true,
+      "wear_class": "ultra_high_strength_wear_resistant",
+      "fda_cfr_citation": "21 CFR § 177.2415 (Polyaryletherketone resins)",
+      "eu_regulation_citation": "EU Regulation (EU) No 10/2011, Annex I (FCM No. 741)",
+      "allowable_contact_load_n": 400.0,
+      "operating_temperature_max_c": 250,
+      "notes": "Premium high-temperature, high-strength thermoplastic for extreme duty packaging."
+    },
+    "mild steel": {
+      "name": "Carbon Steel / Mild Steel (uncoated)",
+      "compliant": false,
+      "wear_class": "abrasive_corrosive",
+      "fda_cfr_citation": "Not Permitted under 21 CFR § 174.5 / 175.300 without certified sanitary barrier",
+      "eu_regulation_citation": "Non-compliant with Regulation (EC) No 1935/2004 Art. 3 (Corrosion & ion migration risk)",
+      "notes": "Direct container contact prohibited; rusts on wet lines, contaminates product."
+    },
+    "unpainted aluminum": {
+      "name": "Raw Industrial Aluminum Alloy (6061-T6 uncoated)",
+      "compliant": false,
+      "wear_class": "galling_prone",
+      "fda_cfr_citation": "21 CFR § 175.300 (Requires compliant anodized or polymeric barrier coating)",
+      "eu_regulation_citation": "Council of Europe Resolution CM/Res(2013)9 on metals and alloys",
+      "notes": "Pitted by caustic washdown solutions; aluminum black transfer onto PET bottles."
+    },
+    "brass": {
+      "name": "Machining Brass (Leaded)",
+      "compliant": false,
+      "wear_class": "leaded_alloy",
+      "fda_cfr_citation": "Prohibited in direct food/beverage contact due to lead leaching risk (FDA CPG Sec. 500.500)",
+      "eu_regulation_citation": "Prohibited under RoHS and EU No 1935/2004",
+      "notes": "Severe contamination hazard."
+    }
+  },
+  "geometric_thresholds": {
+    "min_effective_clearance_mm": 0.20,
+    "clearance_rule": "strict_inequality",
+    "clearance_reference_source": "ISBT Voluntary Plastic Packaging Guidelines Section 4.3; historic failure analysis precedent SW-10884",
+    "clearance_binding_failure_mode": "Effective clearance <= 0.20mm causes bottle binding at speeds > 300 CPM when container thermal expansion and ovality exhaust radial tolerance.",
+    "min_web_thickness_mm": 8.0,
+    "web_reference_source": "Morrison Machinery Design Standard SW-STR-01: minimum continuous material ligament between pocket cutouts to prevent deflection under dynamic bottle centrifugal forces.",
+    "bottle_ovality_tolerances_mm": {
+      "round_pet_water_bottle": 0.60,
+      "carbonated_soda_bottle": 0.45,
+      "thick_wall_hdpe_bottle": 0.80,
+      "standard_glass_bottle": 0.30
+    },
+    "astm_standards": [
+      "ASTM D2911: Standard Specification for Dimensions and Tolerances of Plastic Bottles",
+      "ASTM D2561: Environmental Stress-Crack Resistance of Blown Polyethylene Containers"
+    ]
+  }
+}

@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Morrison Starwheel CAD Pipeline &mdash; Interactive Dashboard</title>
+  <meta name="description" content="End-to-end interactive dashboard for the Morrison automated starwheel CAD engineering pipeline. 8 stages, live 3D viewer, real-time Stage 5 validation, Ollama local model guide." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#080b14;--panel:#0e1120;--card:#141728;--card2:#1c2038;--inp:#181c2e;
+      --brd:rgba(255,255,255,.07);--brd2:rgba(79,110,255,.30);
+      --acc:#4f6eff;--acc-s:rgba(79,110,255,.14);
+      --teal:#00d4b4;--teal-s:rgba(0,212,180,.11);
+      --gold:#f5a623;--gold-s:rgba(245,166,35,.11);
+      --red:#ff4d6d;--red-s:rgba(255,77,109,.12);
+      --grn:#22d3a4;--grn-s:rgba(34,211,164,.11);
+      --pur:#a855f7;--pur-s:rgba(168,85,247,.11);
+      --pink:#ec4899;
+      --t1:#eef2ff;--t2:#8b9cbf;--t3:#45506e;--code:#7dd3fc;
+      --sw:280px;--rw:400px;--r1:6px;--r2:12px;--r3:18px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:var(--bg);color:var(--t1);font-family:Inter,sans-serif;font-size:14px;line-height:1.6;overflow:hidden}
+    #app{display:grid;grid-template-rows:54px 1fr;grid-template-columns:var(--sw) 1fr var(--rw);height:100vh}
+    /* HEADER */
+    #hdr{grid-column:1/-1;background:rgba(8,11,20,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--brd);display:flex;align-items:center;padding:0 18px;gap:14px;z-index:100}
+    .logo{display:flex;align-items:center;gap:9px}
+    .logo-ico{width:30px;height:30px;background:linear-gradient(135deg,var(--acc),var(--teal));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+    .logo-txt{font-size:15px;font-weight:800;background:linear-gradient(90deg,#fff 0%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .vsep{width:1px;height:26px;background:var(--brd)}
+    .hdr-sub{font-size:12px;color:var(--t2);font-weight:500}
+    .spc{flex:1}
+    .pulse{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--t2)}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:blink 2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:var(--r1);font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+    .btn-p{background:linear-gradient(135deg,var(--acc),#7c3aed);color:#fff}
+    .btn-p:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(79,110,255,.45)}
+    .btn-g{background:transparent;color:var(--t2);border:1px solid var(--brd)}
+    .btn-g:hover{border-color:var(--brd2);color:var(--t1)}
+    /* SIDEBAR */
+    #sb{background:var(--panel);border-right:1px solid var(--brd);overflow-y:auto;padding:10px 7px}
+    #sb::-webkit-scrollbar{width:3px}
+    #sb::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
+    .slbl{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;padding:4px 8px 7px}
+    .sc{border-radius:var(--r2);border:1px solid var(--brd);margin-bottom:5px;overflow:hidden;cursor:pointer;transition:all .2s;background:var(--card)}
+    .sc:hover{border-color:var(--brd2);background:var(--card2)}
+    .sc.active{border-color:var(--acc);background:rgba(79,110,255,.09);box-shadow:0 0 0 1px var(--acc-s)}
+    .sc-hd{display:flex;align-items:center;gap:9px;padding:9px 11px}
+    .snum{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+    .sinfo{flex:1;min-width:0}
+    .sname{font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .smod{font-size:10px;color:var(--t2);margin-top:1px}
+    .sstat{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .st-rdy{background:var(--t3)}.st-run{background:var(--gold);animation:blink 1s infinite}
+    .st-done{background:var(--grn)}.st-none{background:var(--pur)}
+    .ot{display:flex;align-items:center;gap:5px;padding:2px 11px 7px;font-size:10px;font-weight:700;color:var(--teal);cursor:pointer;user-select:none}
+    .ot:hover{color:#fff}
+    .op{padding:0 11px 9px;display:none}
+    .op.open{display:block}
+    .ocmd{font-family:"JetBrains Mono",monospace;font-size:10px;background:rgba(0,0,0,.45);border:1px solid rgba(0,212,180,.2);border-radius:var(--r1);padding:6px 8px;color:var(--teal);margin-bottom:5px;white-space:pre-wrap;word-break:break-all}
+    .ometa{font-size:10px;color:var(--t2);line-height:1.55}
+    .ometa b{color:var(--t2)}
+    /* CENTER */
+    #ctr{overflow-y:auto;padding:18px 20px;background:var(--bg)}
+    #ctr::-webkit-scrollbar{width:3px}
+    #ctr::-webkit-scrollbar-thumb{background:var(--brd)}
+    .dh{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+    .dico{width:50px;height:50px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .dtitle{font-size:19px;font-weight:800;color:var(--t1);line-height:1.2}
+    .igrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
+    .ic{background:var(--card);border:1px solid var(--brd);border-radius:var(--r2);padding:13px}
+    .iclbl{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+    .icval{font-size:13px;font-weight:700;color:var(--t1)}
+    .icsub{font-size:11px;color:var(--t3);margin-top:2px}
+    .sec{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin:14px 0 8px}
+    .cb{background:rgba(0,0,0,.5);border:1px solid var(--brd);border-radius:var(--r2);padding:13px 15px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--code);overflow-x:auto;margin-bottom:14px;line-height:1.85;white-space:pre}
+    .ck{color:#c792ea}.cs{color:#c3e88d}.cn2{color:#f78c6c}.cnl{color:#546e7a}
+    .flow{display:flex;align-items:center;gap:0;margin-bottom:14px;overflow-x:auto;padding-bottom:3px}
+    .fn{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;cursor:pointer}
+    .fb{padding:5px 10px;border-radius:var(--r1);font-size:9px;font-weight:700;border:1px solid var(--brd);background:var(--card);color:var(--t2);transition:all .2s;white-space:nowrap}
+    .fn:hover .fb,.fn.active .fb{border-color:var(--acc);color:var(--t1);background:var(--acc-s)}
+    .flab{font-size:8px;color:var(--t3)}
+    .farr{font-size:12px;color:var(--t3);margin:0 2px;margin-bottom:14px}
+    /* VALIDATION FORM */
+    .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px}
+    .fg{display:flex;flex-direction:column;gap:5px}
+    .fl{font-size:11px;font-weight:600;color:var(--t2)}
+    .fi,.fsel{background:var(--inp);border:1px solid var(--brd);border-radius:var(--r1);color:var(--t1);padding:6px 9px;font-size:12px;outline:none;transition:border-color .2s}
+    .fi:focus,.fsel:focus{border-color:var(--acc)}
+    .fi[type=range]{padding:0;cursor:pointer;accent-color:var(--acc);background:transparent;border:none}
+    .rrow{display:flex;align-items:center;gap:7px}
+    .rval{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--acc);min-width:46px;text-align:right}
+    /* SCORECARD */
+    .scard{background:var(--card);border:1px solid var(--brd);border-radius:var(--r3);overflow:hidden;margin-bottom:14px}
+    .shd{display:flex;align-items:center;gap:11px;padding:14px 16px}
+    .vbadge{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:800}
+    .vacc{background:var(--grn-s);color:var(--grn);border:1px solid rgba(34,211,164,.3)}
+    .vrej{background:var(--red-s);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+    .scomp{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--brd)}
+    .scell{background:var(--panel);padding:11px 13px}
+    .sclbl{font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+    .scval{font-size:17px;font-weight:800;font-family:"JetBrains Mono",monospace;color:var(--t1);margin-top:1px}
+    .scunit{font-size:10px;color:var(--t2);font-weight:400}
+    .cklist{padding:11px 16px 14px}
+    .crow{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid var(--brd)}
+    .crow:last-child{border-bottom:none}
+    .cico{width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;margin-top:1px}
+    .cpass{background:var(--grn-s);color:var(--grn)}.cfail{background:var(--red-s);color:var(--red)}
+    .cbody{flex:1}
+    .cname{font-size:11px;font-weight:700;color:var(--t1)}
+    .creason{font-size:10px;color:var(--t2);margin-top:2px;line-height:1.4}
+    .ccit{font-size:9px;font-family:"JetBrains Mono",monospace;color:var(--gold);margin-top:2px}
+    .pbar{height:3px;border-radius:2px;background:var(--brd);overflow:hidden;margin-top:5px}
+    .pfill{height:100%;border-radius:2px;transition:width .5s ease}
+    .pg{background:var(--grn)}.pr{background:var(--red)}.pb{background:var(--acc)}
+    .tipbox{background:var(--teal-s);border:1px solid rgba(0,212,180,.2);border-radius:var(--r2);padding:11px 13px;margin-bottom:12px}
+    .tipttl{font-size:11px;font-weight:700;color:var(--teal);margin-bottom:3px}
+    .tiptxt{font-size:11px;color:var(--t2);line-height:1.5}
+    .warnbox{background:var(--red-s);border:1px solid rgba(255,77,109,.25);border-radius:var(--r2);padding:11px 13px;margin-bottom:12px}
+    .warnttl{font-size:11px;font-weight:700;color:var(--red);margin-bottom:3px}
+    .warntxt{font-size:11px;color:var(--t2);line-height:1.5}
+    .archbox{background:var(--card);border:1px solid var(--brd);border-radius:var(--r2);padding:14px;margin-bottom:14px}
+    .archtitl{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px}
+    /* RIGHT VIEWER */
+    #rp{background:var(--panel);border-left:1px solid var(--brd);display:flex;flex-direction:column;overflow:hidden}
+    .vhdr{padding:11px 13px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:7px;flex-shrink:0}
+    .vtitle{font-size:12px;font-weight:700;color:var(--t1);flex:1}
+    #ccc{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#0c1524 0%,#040710 100%)}
+    #cv{width:100%;height:100%;display:block}
+    .cinfo{position:absolute;bottom:10px;left:10px;font-size:9px;color:rgba(255,255,255,.3);font-family:"JetBrains Mono",monospace;pointer-events:none;line-height:1.6}
+    .cpanel{padding:13px;border-top:1px solid var(--brd);flex-shrink:0}
+    .cphdr{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+    .crow2{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+    .clbl{font-size:10px;color:var(--t2);font-weight:500;min-width:78px}
+    .cval{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--acc);min-width:46px;text-align:right}
+    input[type=range]{flex:1;cursor:pointer;accent-color:var(--acc)}
+    .gstats{background:rgba(0,0,0,.3);border:1px solid var(--brd);border-radius:var(--r1);padding:7px 9px;margin-top:7px;font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--t2);line-height:1.7}
+    .gp{color:var(--grn)}.gf{color:var(--red)}
+    .vbr{display:flex;gap:5px;margin-top:7px}
+    .vbtn{flex:1;padding:4px 6px;border-radius:var(--r1);font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--brd);background:var(--inp);color:var(--t2);transition:all .2s}
+    .vbtn:hover{border-color:var(--acc);color:var(--t1)}
+    .vbtn.active{background:var(--acc-s);border-color:var(--acc);color:var(--acc)}
+    .fade{animation:fi .3s ease}
+    @keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+    /* OLLAMA LIVE RUN */
+    .obadge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2);cursor:pointer;padding:4px 9px;border-radius:100px;border:1px solid var(--brd);background:var(--card)}
+    .obadge:hover{border-color:var(--brd2)}
+    .odot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .odot.ok{background:var(--grn);box-shadow:0 0 5px var(--grn)}
+    .odot.bad{background:var(--red)}
+    .odot.chk{background:var(--gold);animation:blink 1s infinite}
+    .opanel{background:var(--card);border:1px solid rgba(0,212,180,.25);border-radius:var(--r2);padding:14px;margin-bottom:16px}
+    .ophd{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+    .optitle{font-size:12px;font-weight:800;color:var(--teal)}
+    .ofg{margin-bottom:9px}
+    .ofl{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block}
+    .ota{width:100%;background:var(--inp);border:1px solid var(--brd);border-radius:var(--r1);color:var(--t1);padding:9px 10px;font-size:12px;font-family:"JetBrains Mono",monospace;resize:vertical;outline:none;line-height:1.5}
+    .ota:focus{border-color:var(--teal)}
+    .orow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .obtn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r1);font-size:12px;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,var(--teal),#00a88f);color:#04140f;transition:all .15s}
+    .obtn:hover{filter:brightness(1.08)}
+    .obtn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+    .ofile{font-size:11px;color:var(--t2)}
+    .ospin{width:13px;height:13px;border-radius:50%;border:2px solid rgba(0,0,0,.25);border-top-color:#04140f;animation:ospin .7s linear infinite;display:inline-block}
+    @keyframes ospin{to{transform:rotate(360deg)}}
+    .oout{margin-top:11px}
+    .oerr{background:var(--red-s);border:1px solid rgba(255,77,109,.3);border-radius:var(--r2);padding:10px 12px;font-size:11px;color:var(--t1);line-height:1.5}
+    .oerr b{color:var(--red)}
+    .ohint{font-size:10px;color:var(--t2);margin-top:5px;font-family:"JetBrains Mono",monospace}
+    .oresult{background:rgba(0,0,0,.5);border:1px solid var(--brd);border-radius:var(--r2);padding:12px 14px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--code);white-space:pre-wrap;word-break:break-word;max-height:420px;overflow-y:auto;line-height:1.7}
+    .ometalist{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--t2);margin-top:8px}
+    .ometalist b{color:var(--t1)}
+    /* 2D DRAWING VIEW */
+    #dv{position:absolute;inset:0;display:none;background:#0a0f1c;padding:6px}
+    #dv svg{width:100%;height:100%;font-family:"JetBrains Mono",monospace}
+    .dvl{fill:#eef2ff;font-size:9px}
+    .dvt{fill:#8b9cbf;font-size:8px}
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header id="hdr">
+    <div class="logo">
+      <div class="logo-ico">&#9881;</div>
+      <span class="logo-txt">Morrison CAD Pipeline</span>
+    </div>
+    <div class="vsep"></div>
+    <span class="hdr-sub">Change-Part Automated Engineering &mdash; Starwheel &middot; Feed Screw &middot; Guide Rail &mdash; Stages 1&ndash;8</span>
+    <div class="spc"></div>
+    <div class="obadge" id="ollama-badge" onclick="refreshOllamaStatus()" title="Click to re-check Ollama connection">
+      <div class="odot chk" id="ollama-dot"></div>
+      <span id="ollama-label">Checking Ollama&hellip;</span>
+    </div>
+    <div class="vsep" style="margin:0 7px"></div>
+    <button class="btn btn-p" id="demo-btn" onclick="runDemo()">&#9654; Run Demo Pipeline</button>
+    <button class="btn btn-g" style="margin-left:4px" onclick="resetPipeline()">&#8635; Reset</button>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside id="sb">
+    <div class="slbl">Pipeline Stages</div>
+
+    <div class="sc active" id="sc-1" onclick="sel(1)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(79,110,255,.15);color:var(--acc)">1</div>
+        <div class="sinfo"><div class="sname">Spec Extraction</div><div class="smod">Instruction LLM</div></div>
+        <div class="sstat st-done" id="ss-1"></div>
+      </div>
+      <div class="ot" onclick="tog(event,1)">&#129422; Ollama: llama3.1:8b <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-1">
+        <div class="ocmd">ollama pull llama3.1:8b
+ollama run llama3.1:8b</div>
+        <div class="ometa"><b>Replaces:</b> openai/gpt-oss-20b (OpenRouter)<br/><b>RAM:</b> ~8 GB &middot; <b>GPU:</b> Optional (CPU works)<br/><b>Change:</b> base_url="http://localhost:11434/v1"</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-1b" onclick="sel('1b')">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(236,72,153,.15);color:var(--pink)">1b</div>
+        <div class="sinfo"><div class="sname">Drawing Reading</div><div class="smod">Vision LLM (VLM)</div></div>
+        <div class="sstat st-done" id="ss-1b"></div>
+      </div>
+      <div class="ot" onclick="tog(event,'1b')">&#129422; Ollama: qwen2.5vl:7b <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-1b">
+        <div class="ocmd">ollama pull qwen2.5vl:7b
+# or: ollama pull llava:13b</div>
+        <div class="ometa"><b>Replaces:</b> qwen/qwen3-vl-32b (OpenRouter)<br/><b>RAM:</b> 8&ndash;16 GB &middot; <b>GPU:</b> Strongly recommended<br/><b>Input:</b> base64 image in messages[].content</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-2" onclick="sel(2)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(168,85,247,.15);color:var(--pur)">2</div>
+        <div class="sinfo"><div class="sname">Retrieval</div><div class="smod">Embedding Model</div></div>
+        <div class="sstat st-done" id="ss-2"></div>
+      </div>
+      <div class="ot" onclick="tog(event,2)">&#129422; Ollama: nomic-embed-text <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-2">
+        <div class="ocmd">ollama pull nomic-embed-text
+# POST /api/embeddings
+# {"model":"nomic-embed-text","prompt":"..."}</div>
+        <div class="ometa"><b>Replaces:</b> BAAI/bge-m3 (HuggingFace local)<br/><b>RAM:</b> ~2 GB &middot; <b>GPU:</b> Not needed<br/><b>Note:</b> Already runs locally &mdash; Ollama provides cleaner API</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-3" onclick="sel(3)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(0,212,180,.11);color:var(--teal)">3</div>
+        <div class="sinfo"><div class="sname">Design Reasoning</div><div class="smod">Large Reasoning LLM</div></div>
+        <div class="sstat st-done" id="ss-3"></div>
+      </div>
+      <div class="ot" onclick="tog(event,3)">&#129422; Ollama: deepseek-r1:14b <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-3">
+        <div class="ocmd">ollama pull deepseek-r1:14b
+# or: ollama pull qwen2.5:32b</div>
+        <div class="ometa"><b>Replaces:</b> deepseek/deepseek-v4-pro (OpenRouter)<br/><b>RAM:</b> ~16 GB &middot; <b>GPU:</b> 16 GB VRAM recommended<br/><b>Note:</b> Scale matters here &mdash; 14B+ minimum</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-4" onclick="sel(4)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(0,212,180,.11);color:var(--teal)">4</div>
+        <div class="sinfo"><div class="sname">CAD Generation</div><div class="smod">Code LLM</div></div>
+        <div class="sstat st-done" id="ss-4"></div>
+      </div>
+      <div class="ot" onclick="tog(event,4)">&#129422; Ollama: qwen2.5-coder:14b <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-4">
+        <div class="ocmd">ollama pull qwen2.5-coder:14b
+# or: ollama pull codellama:13b</div>
+        <div class="ometa"><b>Replaces:</b> qwen/qwen3-coder-next (OpenRouter)<br/><b>RAM:</b> ~12 GB &middot; <b>GPU:</b> Recommended<br/><b>Critical:</b> Must pass 3-layer CAD validation harness</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-5" onclick="sel(5)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(168,85,247,.15);color:var(--pur)">5</div>
+        <div class="sinfo"><div class="sname">Validation Gate</div><div class="smod">No Model &mdash; Deterministic</div></div>
+        <div class="sstat st-none" id="ss-5"></div>
+      </div>
+      <div class="ot" onclick="tog(event,5)">&#9940; No Ollama needed (pure math) <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-5">
+        <div class="ocmd"># Stage 5 uses ZERO LLM -- by design.
+# A 0.15 mm hallucination = jam at 380 CPM.
+# All checks are deterministic arithmetic.</div>
+        <div class="ometa"><b>Backed by:</b> FDA 21 CFR, ISBT &sect;4.3, ASTM D2911, OEM specs</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-6" onclick="sel(6)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(79,110,255,.15);color:var(--acc)">6</div>
+        <div class="sinfo"><div class="sname">Review &amp; 3D View</div><div class="smod">No Model &mdash; Web Viewer</div></div>
+        <div class="sstat st-none" id="ss-6"></div>
+      </div>
+      <div class="ot" onclick="tog(event,6)">&#127760; Three.js viewer (right panel) <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-6">
+        <div class="ocmd"># Stage 6 = 3D viewer in right panel.
+# Generates starwheel_viewer.html (Three.js).
+# Access-controlled: allowlist hides cost/tolerances.</div>
+        <div class="ometa"><b>Critical:</b> customer_view() uses allowlist &mdash; new fields default to hidden, not leaked.</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-7" onclick="sel(7)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(79,110,255,.15);color:var(--acc)">7</div>
+        <div class="sinfo"><div class="sname">Refinement</div><div class="smod">Instruction LLM</div></div>
+        <div class="sstat st-done" id="ss-7"></div>
+      </div>
+      <div class="ot" onclick="tog(event,7)">&#129422; Ollama: llama3.1:8b <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-7">
+        <div class="ocmd">ollama run llama3.1:8b
+# Same model as Stage 1 -- efficient reuse</div>
+        <div class="ometa"><b>Replaces:</b> qwen/qwen3.6-27b (OpenRouter)<br/><b>RAM:</b> ~8 GB &middot; <b>GPU:</b> Optional<br/><b>Critical:</b> Silent parameter drift = auto-reject</div>
+      </div>
+    </div>
+
+    <div class="sc" id="sc-8" onclick="sel(8)">
+      <div class="sc-hd">
+        <div class="snum" style="background:rgba(245,166,35,.15);color:var(--gold)">8</div>
+        <div class="sinfo"><div class="sname">Outcome Learning</div><div class="smod">Classical ML (GBM)</div></div>
+        <div class="sstat st-done" id="ss-8"></div>
+      </div>
+      <div class="ot" onclick="tog(event,8)">&#128202; scikit-learn / XGBoost (no LLM) <span style="margin-left:auto">&#9662;</span></div>
+      <div class="op" id="op-8">
+        <div class="ocmd"># No LLM -- classical gradient boosting.
+# pip install scikit-learn xgboost lightgbm
+# 6 models tested; LightGBM wins on MAE.</div>
+        <div class="ometa"><b>Why not LLM:</b> Tabular regression &mdash; GBM wins.<br/><b>Top drivers:</b> eff_clearance, speed_util, wear_class</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <main id="ctr"><div id="sc-content" class="fade"></div></main>
+
+  <!-- RIGHT: 3D VIEWER -->
+  <aside id="rp">
+    <div class="vhdr">
+      <span>&#128295;</span>
+      <span class="vtitle">Live CAD Viewer &mdash; <span id="cad-type-lbl">Starwheel</span></span>
+      <button class="vbtn active" id="b3d" style="flex:0 0 auto;padding:3px 9px" onclick="setView('3d')">3D</button>
+      <button class="vbtn" id="b2d" style="flex:0 0 auto;padding:3px 9px" onclick="setView('2d')">2D Drawing</button>
+    </div>
+    <div id="ccc">
+      <canvas id="cv"></canvas>
+      <div id="dv"></div>
+      <div class="cinfo" id="ci">Drag to orbit &middot; Scroll to zoom &middot; Right-drag to pan</div>
+    </div>
+    <div class="cpanel">
+      <div class="cphdr">&#9881; CAD Parameters <span id="spin-lbl" style="font-size:9px;color:var(--t3);font-weight:400;margin-left:auto"></span></div>
+      <div id="cad-controls"></div>
+      <div class="gstats" id="gs">Loading geometry&hellip;</div>
+      <div class="vbr">
+        <button class="vbtn" id="bspin" onclick="tSpin()">&#9654; Spin</button>
+        <button class="vbtn active" id="bwire" onclick="tWire()">&#9724; Solid</button>
+        <button class="vbtn" onclick="rCam()">&#8857; Reset</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* ============================================================
+   STANDARDS REGISTRY  (from validation_standards.json)
+   ============================================================ */
+const MAC={
+  'CAP-12':{max:300,torque:8,screwRpm:300},'CAP-16':{max:450,torque:12,screwRpm:350},'CAP-24':{max:720,torque:20,screwRpm:450},
+  'AROL-EURO-16':{max:480,torque:12,screwRpm:350},'ZALKIN-CA-16':{max:460,torque:12,screwRpm:360}
+};
+const MAT={
+  'UHMW-PE':{ok:true, load:150,cit:'21 CFR \u00a7 177.1520 (Olefin polymers)'},
+  'POM':    {ok:true, load:200,cit:'21 CFR \u00a7 177.2470 (Polyoxymethylene)'},
+  'PTFE':   {ok:true, load:80, cit:'21 CFR \u00a7 177.1550 (Perfluorocarbon resins)'},
+  'PEEK':   {ok:true, load:400,cit:'21 CFR \u00a7 177.2415 (Polyaryletherketone)'},
+  'mild steel':         {ok:false,load:null,cit:'Prohibited \u2014 21 CFR \u00a7 174.5 / corrosion hazard'},
+  'unpainted aluminum': {ok:false,load:null,cit:'21 CFR \u00a7 175.300 \u2014 requires certified coating'},
+  'brass':              {ok:false,load:null,cit:'Prohibited \u2014 lead leaching risk (FDA CPG Sec.500.500)'}
+};
+const OV={
+  'round_pet_water_bottle':0.60,'carbonated_soda_bottle':0.45,
+  'thick_wall_hdpe_bottle':0.80,'standard_glass_bottle':0.30
+};
+const CONTAINER={massKg:0.55,mu:0.25,backpressureN:40,heightMm:210};
+const LIM={
+  effClrMin:0.20,webMin:8,
+  screw:{maxClr:6.0,minEngage:0.20,minBottles:3,minFlight:6.0,dyn:1.5,src:'Morrison Feed Screw Design Standard FS-DS-02'},
+  rail:{maxGap:5.0,minArc:20,maxArc:180,band:[0.25,0.75],minThick:6.0,minHeight:15.0,src:'Morrison Guide Rail Design Standard GR-DS-01'}
+};
+
+/* ============================================================
+   CHANGE-PART TYPES  (the pipeline is generic over these)
+   ============================================================ */
+const PART_TYPES={
+  starwheel:{
+    label:'Starwheel',
+    defaults:{pocket_count:16,pcd_mm:620,pocket_radius_mm:32.8,pocket_clearance_mm:0.80,wheel_thickness_mm:20,bore_diameter_mm:50,rim_mm:8},
+    sliders:[{k:'pcd_mm',l:'PCD (mm)',min:480,max:960,step:10},{k:'pocket_count',l:'Pockets (N)',min:8,max:24,step:2},{k:'pocket_radius_mm',l:'Pocket r (mm)',min:15,max:70,step:0.5},{k:'wheel_thickness_mm',l:'Thickness (mm)',min:10,max:40,step:1}],
+    branchFields:['pocket_count','pcd_mm','pocket_radius_mm','pocket_clearance_mm','wheel_thickness_mm','material_id'],
+    cadHint:'Build a disk of outer diameter OD = pcd_mm + 2*pocket_radius_mm + 2*rim_mm and thickness wheel_thickness_mm, cut a centre bore of bore_diameter_mm, then cut pocket_count circular pockets of radius pocket_radius_mm FULLY THROUGH the disk (cutThruAll) centred on the PCD bolt circle.',
+    cadChecks:[[/import\s+cadquery/i,'imports cadquery'],[/\bfor\b.*\brange\b/,'has a pocket loop (for/range)'],[/cutThruAll/,'cuts pockets through the disk (cutThruAll)'],[/exportStep/i,'exports a STEP file']]
+  },
+  feed_screw:{
+    label:'Feed Screw (Timing Screw)',
+    defaults:{pitch_mm:80,outer_diameter_mm:140,root_diameter_mm:90,length_mm:480,starts:2,flight_thickness_mm:10,handedness:'RH'},
+    sliders:[{k:'pitch_mm',l:'Pitch (mm)',min:40,max:160,step:2},{k:'outer_diameter_mm',l:'OD (mm)',min:80,max:260,step:5},{k:'root_diameter_mm',l:'Root \u2300 (mm)',min:40,max:200,step:5},{k:'length_mm',l:'Length (mm)',min:200,max:900,step:10},{k:'flight_thickness_mm',l:'Flight t (mm)',min:4,max:24,step:1},{k:'starts',l:'Starts',min:1,max:3,step:1}],
+    branchFields:['pitch_mm','outer_diameter_mm','root_diameter_mm','length_mm','starts','flight_thickness_mm','handedness','material_id'],
+    cadHint:'Build a root cylinder of root_diameter_mm x length_mm. Build ONE flight by sweeping a rectangular profile (radial width (outer_diameter_mm-root_diameter_mm)/2 + 1, thickness flight_thickness_mm, sketched on the XZ plane centred at radius root/2 + (OD-root)/4) along cq.Wire.makeHelix(pitch=pitch_mm*starts, height=length_mm, radius=root_diameter_mm/2) using .sweep(path, isFrenet=True); for starts > 1 union rotated copies of that flight (360/starts degrees apart about Z). Do NOT use twistExtrude - it only rotates the end face and cannot form a multi-turn helix.',
+    cadChecks:[[/import\s+cadquery/i,'imports cadquery'],[/makeHelix/,'uses a true helix path (makeHelix)'],[/sweep\(/,'sweeps the flight profile'],[/exportStep/i,'exports a STEP file']]
+  },
+  guide_rail:{
+    label:'Guide Rail',
+    defaults:{rail_radius_mm:340,arc_angle_deg:120,rail_height_mm:25,thickness_mm:12,contact_height_mm:95,mating_pcd_mm:620},
+    sliders:[{k:'rail_radius_mm',l:'Inner R (mm)',min:200,max:700,step:1},{k:'arc_angle_deg',l:'Arc (\u00b0)',min:10,max:220,step:5},{k:'rail_height_mm',l:'Height (mm)',min:5,max:60,step:1},{k:'thickness_mm',l:'Thickness (mm)',min:3,max:30,step:1}],
+    branchFields:['rail_radius_mm','arc_angle_deg','rail_height_mm','thickness_mm','contact_height_mm','material_id'],
+    cadHint:'Sketch an annular sector on the XY plane: inner arc of radius rail_radius_mm and outer arc of rail_radius_mm + thickness_mm spanning arc_angle_deg (moveTo / threePointArc / lineTo / threePointArc / close), then extrude by rail_height_mm.',
+    cadChecks:[[/import\s+cadquery/i,'imports cadquery'],[/threePointArc|radiusArc/i,'sketches the rail arcs'],[/extrude\(/,'extrudes the rail section'],[/exportStep/i,'exports a STEP file']]
+  }
+};
+
+const SAMPLE_EMAILS={
+  starwheel_cap16:{label:'Starwheel \u2014 CAP-16, 16 pockets (reference case)',text:`From: j.hall@brewco.com  Subject: Starwheel quote request
+
+Hi, we need a replacement starwheel for our Morrison CAP-16 capper.
+16 pockets, PCD 620mm, bottle diameter 54mm. Target speed 380 CPM.
+Material should be UHMW-PE for food contact. Thickness 20mm.
+
+We don't have ovality data for this bottle -- will send later.`},
+  starwheel_cap24:{label:'Starwheel \u2014 CAP-24 high-speed line, POM',text:`From: r.delgado@sparklingwave-bev.com  Subject: Need a starwheel for our high-speed line
+
+Hey team,
+
+Our CAP-24 turret needs a new starwheel -- the old one is worn out and
+we're seeing early wear on the pocket edges.
+
+Specs: 24 pockets, PCD 900mm, running our round HDPE bottles (thick wall).
+Bottle diameter is about 68mm. We push this line at 700 CPM during peak
+shifts. Go with POM this time instead of UHMW-PE -- our maintenance lead
+wants to try it for the extra stiffness.
+
+Didn't get a chance to measure thickness on the old part, someone will
+have to pull the drawing. Let me know what else you need.
+
+Thanks,
+Rick`},
+  feed_screw:{label:'Feed screw \u2014 CAP-16 infeed timing screw',text:`From: m.okafor@northridgebottling.com  Subject: Infeed timing screw for line 3 filler
+
+Hi -- we need a new infeed feed screw for the Morrison CAP-16 on line 3.
+Bottle is a 66mm diameter round PET, and we run the line at 380 CPM.
+The screw needs to be about 480mm long, right-hand, in UHMW-PE.
+For pitch and outside diameter use whatever suits the bottle -- the old
+drawing is lost, so please propose them and tell us why.
+
+Thanks, Maya`},
+  guide_rail:{label:'Guide rail \u2014 CAP-16 discharge outer rail',text:`From: s.lindqvist@fjordwater.se  Subject: Replacement outer guide rail, capper discharge
+
+Hello,
+The outer guide rail on our CAP-16 discharge starwheel (PCD 620mm) is cracked.
+Our bottle is 54mm diameter, 210mm tall, round PET, and the line runs 380 CPM.
+The rail should wrap about 120 degrees around the wheel, 25mm high and 12mm
+thick, in UHMW-PE. Contact height about 95mm above the conveyor -- that is on
+the label panel of the bottle.
+Regards, Sara`}
+};
+
+let CAD_STATE={
+  type:'starwheel',
+  params:{...PART_TYPES.starwheel.defaults},
+  common:{machine_id:'CAP-16',material_id:'UHMW-PE',ovality_mm:0.60,target_speed_cpm:380,bottle_diameter_mm:54,bottle_height_mm:210,accumulation_backpressure_n:40}
+};
+function num(v,def){const x=parseFloat(v);return Number.isFinite(x)?x:def;}
+function r1(x){return Math.round(x*10)/10}
+function r2(x){return Math.round(x*100)/100}
+function r3(x){return Math.round(x*1000)/1000}
+
+/* ============================================================
+   STAGE 5 ENGINE  (JS port of stage5_engine.py)
+   ============================================================ */
+function webMM(pcd,n,r){return pcd*Math.sin(Math.PI/n)-2*r}
+function effClr(clr,ov){return clr-ov/2}
+function su(spd,mid){return MAC[mid]?spd/MAC[mid].max:null}
+function foodChk(mid){
+  if(!MAT[mid])return{ok:null,cit:'UNREGISTERED \u2014 fails closed per 21 CFR \u00a7 174.5'};
+  return{ok:MAT[mid].ok,cit:MAT[mid].cit};
+}
+function validate(p){
+  const web=webMM(p.pcd,p.n,p.r);
+  const ec=effClr(p.clr,p.ov);
+  const util=su(p.spd,p.mid);
+  const fc=foodChk(p.mat);
+
+  const webReason = web<=0
+    ? 'Web '+web.toFixed(2)+' mm is negative \u2014 pocket cutouts overlap.'
+    : (web<8 ? 'Web '+web.toFixed(2)+' mm < 8.0 mm minimum. \u2192 Morrison SW-STR-01' : '');
+  const ecReason = ec<=0.20
+    ? 'Eff. clearance '+ec.toFixed(3)+' mm \u2264 0.20 mm floor \u2014 bottle binds. \u2192 ISBT \u00a74.3 / SW-10884'
+    : '';
+  const speedReason = util===null
+    ? "Machine '"+p.mid+"' not in catalog."
+    : (util>1 ? 'Speed '+p.spd+' CPM > rated max '+MAC[p.mid].max+' CPM (util '+util.toFixed(3)+').' : '');
+  const foodReason = fc.ok===false
+    ? "Material '"+p.mat+"' not food-contact approved. \u2192 "+fc.cit
+    : (fc.ok===null ? "Material '"+p.mat+"' unregistered \u2014 fails closed. \u2192 "+fc.cit : '');
+
+  const checks={
+    'Geometry Valid (web > 0)':{pass:web>0, reason:web<=0?webReason:''},
+    'Web Thickness \u2265 8.0 mm':{pass:web>=8, reason:web>=8?'':webReason},
+    'Effective Clearance > 0.20 mm':{pass:ec>0.20, reason:ecReason, cit:ec>0.20?'':'ISBT \u00a74.3 / ASTM D2911 / Failure SW-10884'},
+    'Speed Within Machine Limit':{pass:util!==null&&util<=1.0, reason:speedReason},
+    'Food-Contact Compliant':{pass:fc.ok===true, reason:foodReason, cit:fc.ok!==true?fc.cit:''}
+  };
+  const reasons=[webReason,ecReason,speedReason,foodReason].filter(r=>r.length>0);
+  const allPass=Object.values(checks).every(c=>c.pass);
+  let ws=0;
+  if(allPass){
+    const mg=Math.max(0,Math.min(1,(ec-0.2)/0.5));
+    const ss2=util!==null?Math.max(0,1-util):0;
+    ws=Math.round((0.6+0.3*mg+0.1*ss2)*100)/100;
+  }
+  const rpm=p.n>0?p.spd/p.n:0, omega=2*Math.PI*rpm/60;
+  const pocketLoad=(p.massKg||CONTAINER.massKg)*omega*omega*(p.pcd/2000);
+  return{type:'starwheel',verdict:allPass?'accept':'reject',checks,reasons,
+    cit:fc.cit,
+    computed:{web:Math.round(web*100)/100,ec:Math.round(ec*1000)/1000,
+              util:util!==null?Math.round(util*1000)/1000:null,ws,
+              rpm:r1(rpm),pocketLoad:r2(pocketLoad)}};
+}
+
+/* ---- Feed screw & guide rail validators (mirrors stage5_engine.py
+   validate_feed_screw / validate_guide_rail) ---- */
+function checkRow(pass,reason,cit){return{pass,reason:pass?'':reason,cit:pass?'':(cit||'')}}
+const ISBT_CIT='ISBT §4.3 / ASTM D2911 / Failure SW-10884';
+
+function validateFeedScrew(p){
+  const S=LIM.screw;
+  const pocketW=p.pitch-p.ft, clr=pocketW-p.bd, ec=clr-p.ov/2;
+  const depth=(p.od-p.root)/2, engage=p.bd>0?depth/p.bd:0;
+  const nEng=p.pitch>0?Math.floor(p.len/p.pitch):0;
+  const starts=Math.max(1,Math.round(p.starts));
+  const rpm=p.spd/starts;
+  const torque=S.dyn*(nEng*p.mu*p.massKg*9.81+p.bp)*(p.od/2/1000);
+  const m=MAC[p.mid]||null;
+  const maxRpm=m?m.screwRpm:null, maxT=m?m.torque:null;
+  const util=su(p.spd,p.mid), fc=foodChk(p.mat);
+  const checks={
+    'Geometry Valid (root < OD, pocket > 0)':checkRow(p.root<p.od&&pocketW>0&&p.len>0,'Root must be smaller than OD and pocket width (pitch − flight) must be positive.'),
+    'Effective Pocket Clearance > 0.20 mm':checkRow(ec>LIM.effClrMin,'Eff. clearance '+ec.toFixed(2)+' mm ≤ 0.20 mm floor — bottle binds between flights.',ISBT_CIT),
+    'Pocket Clearance ≤ 6.0 mm (timing)':checkRow(clr<=S.maxClr,'Clearance '+clr.toFixed(2)+' mm > '+S.maxClr+' mm — bottle rattles and mis-times into the starwheel.',S.src),
+    'Flight Engagement ≥ 20% of bottle ⌀':checkRow(engage>=S.minEngage,'Flight engages only '+(engage*100).toFixed(0)+'% of the bottle diameter — bottles can ride over the flight.',S.src),
+    'Flight Thickness ≥ 6.0 mm':checkRow(p.ft>=S.minFlight,'Flight '+p.ft+' mm < '+S.minFlight+' mm minimum.',S.src),
+    'Bottles Engaged ≥ 3':checkRow(nEng>=S.minBottles,'Only '+nEng+' bottles engaged (length ÷ pitch) — need ≥ '+S.minBottles+' for stable timing.',S.src),
+    'Screw RPM Within Drive Limit':checkRow(maxRpm!==null&&rpm<=maxRpm,maxRpm===null?"Machine '"+p.mid+"' has no screw-drive data.":'Screw '+rpm.toFixed(0)+' rpm ('+p.spd+' CPM ÷ '+starts+' start'+(starts>1?'s':'')+') > '+maxRpm+' rpm drive limit — add a start or reduce speed.'),
+    'Drive Torque Within Rating':checkRow(maxT!==null&&torque<=maxT,maxT===null?"Machine '"+p.mid+"' has no torque rating.":'Estimated drive torque '+torque.toFixed(2)+' N·m > rated '+maxT+' N·m.'),
+    'Speed Within Machine Limit':checkRow(util!==null&&util<=1,util===null?"Machine '"+p.mid+"' not in catalog.":'Speed '+p.spd+' CPM > rated max '+(m?m.max:'?')+' CPM.'),
+    'Food-Contact Compliant':checkRow(fc.ok===true,fc.ok===false?"Material '"+p.mat+"' not food-contact approved. → "+fc.cit:"Material '"+p.mat+"' unregistered — fails closed. → "+fc.cit,fc.cit)
+  };
+  const allPass=Object.values(checks).every(c=>c.pass);
+  let ws=0;
+  if(allPass){const mg=Math.max(0,Math.min(1,(ec-0.2)/2));const tm=maxT?Math.max(0,1-torque/maxT):0;ws=r2(0.6+0.25*mg+0.15*tm);}
+  return{type:'feed_screw',verdict:allPass?'accept':'reject',checks,reasons:Object.values(checks).filter(c=>!c.pass).map(c=>c.reason),cit:fc.cit,
+    computed:{pocketW:r2(pocketW),clr:r2(clr),ec:r2(ec),depth:r2(depth),engage:r3(engage),nEng,rpm:r1(rpm),torque:r2(torque),maxT,maxRpm,util:util!==null?r3(util):null,ws}};
+}
+
+function validateGuideRail(p){
+  const R=LIM.rail;
+  const gap=p.R-p.pcd/2-p.bd/2, eg=gap-p.ov/2;
+  const band=[R.band[0]*p.bh,R.band[1]*p.bh];
+  const N=p.N||Math.max(1,Math.round(Math.PI*p.pcd/(2.2*p.bd)));
+  const nArc=Math.max(1,Math.round(p.arc/360*N));
+  const omega=2*Math.PI*(p.spd/N)/60, per=p.massKg*omega*omega*(p.pcd/2000), load=nArc*per;
+  const allow=MAT[p.mat]?MAT[p.mat].load:null;
+  const m=MAC[p.mid]||null, util=su(p.spd,p.mid), fc=foodChk(p.mat);
+  const checks={
+    'Geometry Valid (gap > 0)':checkRow(gap>0&&p.t>0&&p.h>0,'Running gap '+gap.toFixed(2)+' mm is not positive — rail sits inside the bottle envelope.'),
+    'Effective Running Gap > 0.20 mm':checkRow(eg>LIM.effClrMin,'Eff. gap '+eg.toFixed(2)+' mm ≤ 0.20 mm floor — bottle binds between pocket and rail.',ISBT_CIT),
+    'Running Gap ≤ 5.0 mm':checkRow(gap<=R.maxGap,'Gap '+gap.toFixed(2)+' mm > '+R.maxGap+' mm — bottles can tip out of the pocket.',R.src),
+    'Arc Angle 20–180°':checkRow(p.arc>=R.minArc&&p.arc<=R.maxArc,'Arc '+p.arc+'° outside '+R.minArc+'–'+R.maxArc+'° — a rail past 180° traps bottles and blocks changeover access.',R.src),
+    'Contact Height on Bottle Body (25–75% H)':checkRow(p.ch>=band[0]&&p.ch<=band[1],'Contact height '+p.ch+' mm outside body band '+band[0].toFixed(0)+'–'+band[1].toFixed(0)+' mm — would ride on the shoulder or base chime.',R.src),
+    'Rail Thickness ≥ 6.0 mm':checkRow(p.t>=R.minThick,'Thickness '+p.t+' mm < '+R.minThick+' mm minimum.',R.src),
+    'Rail Height ≥ 15 mm':checkRow(p.h>=R.minHeight,'Height '+p.h+' mm < '+R.minHeight+' mm minimum.',R.src),
+    'Radial Load ≤ Material Allowable':checkRow(allow!==null&&load<=allow,allow===null?"Material '"+p.mat+"' has no allowable contact load on file (fails closed).":'Radial load '+load.toFixed(1)+' N > allowable '+allow+' N.'),
+    'Speed Within Machine Limit':checkRow(util!==null&&util<=1,util===null?"Machine '"+p.mid+"' not in catalog.":'Speed '+p.spd+' CPM > rated max '+(m?m.max:'?')+' CPM.'),
+    'Food-Contact Compliant':checkRow(fc.ok===true,fc.ok===false?"Material '"+p.mat+"' not food-contact approved. → "+fc.cit:"Material '"+p.mat+"' unregistered — fails closed. → "+fc.cit,fc.cit)
+  };
+  const allPass=Object.values(checks).every(c=>c.pass);
+  let ws=0;
+  if(allPass){const mg=Math.max(0,Math.min(1,(eg-0.2)/2));const lm=allow?Math.max(0,1-load/allow):0;ws=r2(0.6+0.25*mg+0.15*lm);}
+  return{type:'guide_rail',verdict:allPass?'accept':'reject',checks,reasons:Object.values(checks).filter(c=>!c.pass).map(c=>c.reason),cit:fc.cit,
+    computed:{gap:r2(gap),eg:r2(eg),band:[r1(band[0]),r1(band[1])],N,nArc,load:r2(load),allow,util:util!==null?r3(util):null,ws}};
+}
+
+/* Dispatch a schema-named design object (part_type + fields) to the right validator. */
+function validateDesign(d){
+  const type=PART_TYPES[d.part_type]?d.part_type:'starwheel';
+  const ov=num(d.ovality_mm,0.60), spd=num(d.target_speed_cpm,380), mid=d.machine_id||'CAP-16', mat=d.material_id||'UHMW-PE', bd=num(d.bottle_diameter_mm,54);
+  const massKg=num(d.filled_mass_kg,CONTAINER.massKg);
+  if(type==='feed_screw')return validateFeedScrew({pitch:num(d.pitch_mm,80),od:num(d.outer_diameter_mm,140),root:num(d.root_diameter_mm,90),len:num(d.length_mm,480),starts:num(d.starts,1),ft:num(d.flight_thickness_mm,10),bd,ov,mid,mat,spd,massKg,mu:num(d.friction_coefficient,CONTAINER.mu),bp:num(d.accumulation_backpressure_n,CONTAINER.backpressureN)});
+  if(type==='guide_rail')return validateGuideRail({R:num(d.rail_radius_mm,340),arc:num(d.arc_angle_deg,120),h:num(d.rail_height_mm,25),t:num(d.thickness_mm,12),ch:num(d.contact_height_mm,95),pcd:num(d.mating_pcd_mm,620),bd,bh:num(d.bottle_height_mm,CONTAINER.heightMm),ov,mid,mat,spd,massKg,N:d.mating_pocket_count?num(d.mating_pocket_count,0):null});
+  return validate({pcd:num(d.pcd_mm,620),n:num(d.pocket_count,16),r:num(d.pocket_radius_mm,32.8),clr:num(d.pocket_clearance_mm,0.8),ov,mid,mat,spd,massKg});
+}
+
+function scoreTiles(res){
+  const c=res.computed;
+  if(res.type==='feed_screw')return[
+    {l:'Effective Clearance',v:c.ec,u:'mm',ok:c.ec>0.2&&c.clr<=6,pct:c.ec/3},
+    {l:'Drive Torque',v:c.torque,u:'N·m'+(c.maxT?' / '+c.maxT:''),ok:c.maxT!==null&&c.torque<=c.maxT,pct:c.maxT?c.torque/c.maxT:0},
+    {l:'Screw Speed',v:c.rpm,u:'rpm'+(c.maxRpm?' / '+c.maxRpm:''),ok:c.maxRpm!==null&&c.rpm<=c.maxRpm,pct:c.maxRpm?c.rpm/c.maxRpm:0}];
+  if(res.type==='guide_rail')return[
+    {l:'Effective Gap',v:c.eg,u:'mm',ok:c.eg>0.2&&c.gap<=5,pct:c.eg/3},
+    {l:'Radial Load',v:c.load,u:'N'+(c.allow?' / '+c.allow:''),ok:c.allow!==null&&c.load<=c.allow,pct:c.allow?c.load/c.allow:0},
+    {l:'Speed Utilisation',v:c.util,u:'',ok:c.util!==null&&c.util<=1,pct:c.util||0}];
+  return[
+    {l:'Web Thickness',v:c.web,u:'mm',ok:c.web>=8,pct:c.web/80},
+    {l:'Effective Clearance',v:c.ec,u:'mm',ok:c.ec>0.2,pct:c.ec/2},
+    {l:'Speed Utilisation',v:c.util,u:'',ok:c.util!==null&&c.util<=1,pct:c.util||0}];
+}
+
+function formulasFor(res,d){
+  const c=res.computed;
+  if(res.type==='feed_screw')return `pocket_w = pitch − flight_t  =  ${d.pitch_mm} − ${d.flight_thickness_mm}  =  <b style="color:var(--grn)">${c.pocketW} mm</b>
+c_eff    = (pocket_w − bottle_⌀) − ovality/2  =  (${c.pocketW} − ${d.bottle_diameter_mm}) − ${d.ovality_mm}/2  =  <b style="color:var(--grn)">${c.ec} mm</b>  [floor: &gt; 0.20 mm, ceiling: ≤ 6.0 mm]
+engage   = (OD − root)/2 ÷ bottle_⌀  =  ${c.depth} / ${d.bottle_diameter_mm}  =  <b style="color:var(--grn)">${(c.engage*100).toFixed(0)}%</b>  [min 20%]
+n_eng    = floor(length / pitch)  =  floor(${d.length_mm} / ${d.pitch_mm})  =  <b style="color:var(--grn)">${c.nEng}</b>  [min 3]
+rpm      = target_cpm / starts  =  ${d.target_speed_cpm} / ${d.starts}  =  <b style="color:var(--grn)">${c.rpm} rpm</b>  [drive limit ${c.maxRpm??'?'}]
+torque   = ${LIM.screw.dyn} × (n_eng × μ × m × g + backpressure) × OD/2  =  <b style="color:var(--grn)">${c.torque} N·m</b>  [rated ${c.maxT??'?'} N·m]`;
+  if(res.type==='guide_rail')return `gap      = R_rail − PCD/2 − bottle_⌀/2  =  ${d.rail_radius_mm} − ${d.mating_pcd_mm}/2 − ${d.bottle_diameter_mm}/2  =  <b style="color:var(--grn)">${c.gap} mm</b>  [≤ 5.0 mm]
+gap_eff  = gap − ovality/2  =  ${c.gap} − ${d.ovality_mm}/2  =  <b style="color:var(--grn)">${c.eg} mm</b>  [floor: &gt; 0.20 mm]
+h_band   = [0.25, 0.75] × bottle_H  =  <b style="color:var(--grn)">${c.band[0]}–${c.band[1]} mm</b>  (contact at ${d.contact_height_mm} mm)
+load     = n_arc × m × ω² × PCD/2,  n_arc = ${c.nArc} of N≈${c.N}  =  <b style="color:var(--grn)">${c.load} N</b>  [allowable ${c.allow??'?'} N]`;
+  const maxS=MAC[d.machine_id]?MAC[d.machine_id].max:'?';
+  return `web  = PCD × sin(π/N) − 2r  =  ${d.pcd_mm} × sin(π/${d.pocket_count}) − 2×${d.pocket_radius_mm}  =  <b style="color:var(--grn)">${c.web} mm</b>
+c_eff = clearance − ovality/2  =  ${d.pocket_clearance_mm} − ${d.ovality_mm}/2  =  <b style="color:var(--grn)">${c.ec} mm</b>  [floor: &gt; 0.20 mm]
+util  = target_speed / rated_max  =  ${d.target_speed_cpm} / ${maxS}  =  <b style="color:var(--grn)">${c.util!==null?c.util.toFixed(3):'N/A'}</b>  [limit: ≤ 1.000]
+load  = m × ω² × PCD/2 at ${c.rpm} rpm  =  <b style="color:var(--grn)">${c.pocketLoad} N</b> per pocket  (informational)`;
+}
+
+/* ============================================================
+   OLLAMA LIVE INTEGRATION
+   ============================================================ */
+let OLLAMA_BASE='http://localhost:11434';
+let OLLAMA_MODELS=[];
+let OLLAMA_STATUS='checking';
+
+/* ---- Cross-stage chaining: what each stage produced, and every input box's
+   current text (so edits survive re-render, and downstream stages default to
+   upstream real output instead of a fixed hardcoded example). ---- */
+let PIPELINE_STATE={spec:null,precedents:null,chosenBranch:null};
+let STAGE_INPUT_CACHE={};
+
+function iv(id,fallback){
+  return escHtml(id in STAGE_INPUT_CACHE ? STAGE_INPUT_CACHE[id] : fallback);
+}
+
+function has(v){return v!==null&&v!==undefined&&v!=='';}
+function pick(){for(let i=0;i<arguments.length;i++){if(has(arguments[i]))return arguments[i];}return null;}
+function currentType(){const s=PIPELINE_STATE.spec;return(s&&PART_TYPES[s.part_type])?s.part_type:CAD_STATE.type;}
+
+function specSummaryText(spec){
+  if(!spec)return null;
+  const parts=[];
+  const T=PART_TYPES[spec.part_type];
+  if(T)parts.push(T.label.replace(/\s*\(.*\)/,'').toLowerCase());
+  const f=(k,fmt)=>{if(has(spec[k]))parts.push(fmt(spec[k]));};
+  f('pocket_count',v=>v+' pockets');f('pcd_mm',v=>'PCD '+v+'mm');
+  f('pitch_mm',v=>'pitch '+v+'mm');f('outer_diameter_mm',v=>'OD '+v+'mm');f('length_mm',v=>'length '+v+'mm');f('starts',v=>v+'-start');
+  f('rail_radius_mm',v=>'rail R '+v+'mm');f('arc_angle_deg',v=>v+'° arc');f('mating_pcd_mm',v=>'on PCD '+v+'mm');
+  f('bottle_diameter_mm',v=>'bottle ⌀'+v+'mm');f('material_id',v=>v);f('machine_id',v=>'Morrison '+v);f('target_speed_cpm',v=>'target speed '+v+' CPM');
+  return parts.length?parts.join(', '):null;
+}
+
+function stage3ContextText(spec,precedents){
+  const type=(spec&&PART_TYPES[spec.part_type])?spec.part_type:CAD_STATE.type;
+  const specLine=specSummaryText(spec)||specSummaryText({part_type:type,...CAD_STATE.params,...CAD_STATE.common})||'starwheel, 16 pockets, PCD 620mm';
+  const unresolved=(spec&&Array.isArray(spec.unresolved_questions)&&spec.unresolved_questions.length)?`\nCustomer left open (propose these): ${spec.unresolved_questions.join('; ')}`:'';
+  let precLines, label;
+  if(precedents&&precedents.length){
+    precLines=precedents.slice(0,3).map((p,i)=>`${i+1}. ${p.id} — ${p.text} (outcome: ${p.outcome})`).join('\n');
+    label='Top precedents (outcome-ranked by Stage 2):';
+  }else{
+    const lib=PRECEDENTS.filter(p=>p.part_type===type).slice(0,3);
+    precLines=lib.map((p,i)=>`${i+1}. ${p.id} — ${p.text} (outcome: ${p.outcome})`).join('\n');
+    label='Precedent library (unranked — run Stage 2 to rank by service outcome):';
+  }
+  return `Spec: ${specLine}${unresolved}\n\n${label}\n${precLines}`;
+}
+
+/* Stage 3 returns a Tree-of-Thought set of branches. */
+function extractBranches(text){
+  let parsed=null;
+  try{parsed=JSON.parse(text);}catch(e){return null;}
+  const isObj=b=>b&&typeof b==='object'&&!Array.isArray(b);
+  if(Array.isArray(parsed))return parsed.filter(isObj);
+  if(isObj(parsed)){
+    for(const k of ['branches','candidates','designs','options']){if(Array.isArray(parsed[k]))return parsed[k].filter(isObj);}
+    return [parsed];
+  }
+  return null;
+}
+function extractBranch(text){
+  const a=extractBranches(text); if(!a||!a.length)return null;
+  return a.find(b=>b.recommended===true)||a[0];
+}
+/* LLM output is untrusted: drop unknown materials (fall back to the spec's), normalise handedness. */
+function sanitizeBranch(b){
+  const o={...b};
+  if(o.material_id!==undefined&&!MAT[o.material_id]){o._material_dropped=o.material_id;delete o.material_id;}
+  if(o.handedness!==undefined)o.handedness=/^l/i.test(String(o.handedness))?'LH':'RH';
+  return o;
+}
+/* Every branch goes through the real Stage 5 gate; the recommended branch wins only if it passes,
+   otherwise the first passing branch, otherwise the recommended/first one is carried forward for refinement. */
+function chooseBranch(spec,arr){
+  const evald=arr.map(raw=>{const b=sanitizeBranch(raw);const d=mergedDesign(spec,b);return{b,d,v:validateDesign(d)};});
+  const rec=evald.find(e=>e.b.recommended===true);
+  const pick=(rec&&rec.v.verdict==='accept')?rec:(evald.find(e=>e.v.verdict==='accept')||rec||evald[0]);
+  return{evald,pick};
+}
+
+/* One design object that carries part_type + geometry + operating context,
+   built from whatever upstream stages produced, falling back to the viewer state. */
+function mergedDesign(spec,branch){
+  const type=(spec&&PART_TYPES[spec.part_type])?spec.part_type:((branch&&PART_TYPES[branch.part_type])?branch.part_type:CAD_STATE.type);
+  const T=PART_TYPES[type], C=CAD_STATE.common, d={part_type:type};
+  for(const k of Object.keys(T.defaults))d[k]=pick(branch&&branch[k],spec&&spec[k],type===CAD_STATE.type?CAD_STATE.params[k]:null,T.defaults[k]);
+  d.material_id=pick(branch&&branch.material_id,spec&&spec.material_id,C.material_id);
+  d.machine_id=pick(spec&&spec.machine_id,C.machine_id);
+  d.target_speed_cpm=pick(spec&&spec.target_speed_cpm,C.target_speed_cpm);
+  d.bottle_diameter_mm=pick(branch&&branch.bottle_diameter_mm,spec&&spec.bottle_diameter_mm,C.bottle_diameter_mm);
+  d.bottle_height_mm=pick(spec&&spec.bottle_height_mm,C.bottle_height_mm);
+  d.ovality_mm=pick(spec&&spec.ovality_mm,C.ovality_mm);
+  return d;
+}
+function designParamsJSON(spec,branch){
+  const d=mergedDesign(spec,branch), T=PART_TYPES[d.part_type], o={part_type:d.part_type};
+  for(const k of Object.keys(T.defaults))o[k]=d[k];
+  o.material_id=d.material_id;
+  return JSON.stringify(o,null,2);
+}
+function refinementBaseJSON(spec,branch){return JSON.stringify(mergedDesign(spec,branch),null,2);}
+
+function escHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function refreshOllamaStatus(){
+  const dot=document.getElementById('ollama-dot'), lbl=document.getElementById('ollama-label');
+  OLLAMA_STATUS='checking';
+  if(dot)dot.className='odot chk';
+  if(lbl)lbl.textContent='Checking Ollama…';
+  try{
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),4000);
+    const r=await fetch(OLLAMA_BASE+'/api/tags',{signal:ctrl.signal});
+    clearTimeout(timer);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    OLLAMA_MODELS=(j.models||[]).map(m=>m.name);
+    OLLAMA_STATUS='ok';
+    if(dot)dot.className='odot ok';
+    if(lbl)lbl.textContent=OLLAMA_MODELS.length
+      ? '🦙 Ollama · '+OLLAMA_MODELS.length+' model'+(OLLAMA_MODELS.length===1?'':'s')+' ready'
+      : '🦙 Ollama connected · no models pulled';
+  }catch(err){
+    OLLAMA_STATUS='bad';
+    OLLAMA_MODELS=[];
+    if(dot)dot.className='odot bad';
+    if(lbl)lbl.textContent='🦙 Ollama unreachable — click to retry';
+    console.warn('Ollama status check failed:',err.message);
+  }
+  if(typeof cur!=='undefined'&&document.getElementById('sc-content'))render(cur);
+}
+
+function hasVisionModel(){
+  return OLLAMA_MODELS.find(m=>/vl|vision|llava|moondream|bakllava|minicpm-v/i.test(m))||null;
+}
+
+function modelPicker(id,recommended){
+  if(OLLAMA_MODELS.length){
+    const opts=OLLAMA_MODELS.map(m=>`<option value="${escHtml(m)}" ${m===recommended?'selected':''}>${escHtml(m)}</option>`).join('');
+    return `<select class="fsel" id="${id}" style="width:100%">${opts}</select>`;
+  }
+  return `<input class="fi" id="${id}" style="width:100%" value="${escHtml(recommended)}" placeholder="model name, e.g. ${escHtml(recommended)}"/>`;
+}
+
+function oSetBusy(btnId,busy,label){
+  const b=document.getElementById(btnId);if(!b)return;
+  b.disabled=busy;
+  b.innerHTML=busy?'<span class="ospin"></span> Running…':escHtml(label);
+}
+
+const STAGE_CACHE={};
+const OUT_TO_STAGE={'o1-out':'1','o1b-out':'1b','o2-out':'2','o3-out':'3','o4-out':'4','o7-out':'7'};
+const STAGE_TO_OUT={'1':'o1-out','1b':'o1b-out','2':'o2-out','3':'o3-out','4':'o4-out','7':'o7-out'};
+
+function oCacheSnapshot(outId){
+  const stageKey=OUT_TO_STAGE[outId];
+  const el=document.getElementById(outId);
+  if(stageKey&&el)STAGE_CACHE[stageKey]=el.innerHTML;
+}
+
+function oShowError(outId,title,detail,hint){
+  const el=document.getElementById(outId);if(!el)return;
+  el.innerHTML=`<div class="oerr"><b>${escHtml(title)}</b><br/>${escHtml(detail)}${hint?`<div class="ohint">${escHtml(hint)}</div>`:''}</div>`;
+  oCacheSnapshot(outId);
+}
+
+function oShowResult(outId,text){
+  const el=document.getElementById(outId);if(!el)return;
+  el.innerHTML='';
+  const pre=document.createElement('div');
+  pre.className='oresult';
+  pre.textContent=text;
+  el.appendChild(pre);
+  oCacheSnapshot(outId);
+}
+
+function oRestoreCache(id){
+  const cached=STAGE_CACHE[id];
+  const outId=STAGE_TO_OUT[id];
+  if(!cached||!outId)return;
+  const el=document.getElementById(outId);
+  if(el)el.innerHTML=cached;
+}
+
+function connErrorHint(err){
+  const msg=(err&&err.message)||String(err);
+  if(err&&err.name==='AbortError')return{title:'Request timed out',detail:'Ollama did not respond in time — the model may still be loading into memory, or your hardware is slow for this model size.',hint:'Try a smaller model, or run it once from a terminal (ollama run <model>) to warm it up, then retry here.'};
+  if(/Failed to fetch|NetworkError|TypeError/i.test(msg))return{title:'Could not reach Ollama',detail:'Connection failed at '+OLLAMA_BASE+'. Either Ollama is not running, or its CORS setting is blocking this page.',hint:'Start Ollama, and make sure OLLAMA_ORIGINS allows this page (e.g. OLLAMA_ORIGINS=*), then restart Ollama.'};
+  return{title:'Ollama request failed',detail:msg,hint:''};
+}
+
+async function runOllamaStage({model,outId,btnId,btnLabel,callFn}){
+  oSetBusy(btnId,true);
+  const el=document.getElementById(outId);if(el)el.innerHTML='';
+  try{
+    const result=await callFn();
+    oSetBusy(btnId,false,btnLabel);
+    return result;
+  }catch(err){
+    oSetBusy(btnId,false,btnLabel);
+    let{title,detail,hint}=connErrorHint(err);
+    if(err&&err.notFound){title='Model not found';hint='Pull it first: ollama pull '+model;}
+    oShowError(outId,title,detail,hint);
+    return null;
+  }
+}
+
+async function ollamaChat({model,system,user,images,json}){
+  const messages=[];
+  if(system)messages.push({role:'system',content:system});
+  const msg={role:'user',content:user};
+  if(images&&images.length)msg.images=images;
+  messages.push(msg);
+  const body={model,messages,stream:false};
+  if(json)body.format='json';
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),600000);
+  try{
+    const r=await fetch(OLLAMA_BASE+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+    clearTimeout(timer);
+    const j=await r.json().catch(()=>null);
+    if(!r.ok||!j||j.error){
+      const errMsg=(j&&j.error)||('HTTP '+r.status);
+      throw Object.assign(new Error(errMsg),{isOllamaApiError:true,notFound:/not found/i.test(errMsg)});
+    }
+    return{ok:true,text:(j.message&&j.message.content)||''};
+  }catch(err){
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+async function ollamaEmbed({model,text}){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),60000);
+  try{
+    const r=await fetch(OLLAMA_BASE+'/api/embeddings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,prompt:text}),signal:ctrl.signal});
+    clearTimeout(timer);
+    const j=await r.json().catch(()=>null);
+    if(!r.ok||!j||!j.embedding){
+      const errMsg=(j&&j.error)||('HTTP '+r.status);
+      throw Object.assign(new Error(errMsg),{isOllamaApiError:true,notFound:/not found/i.test(errMsg)});
+    }
+    return{ok:true,embedding:j.embedding};
+  }catch(err){
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+function cosineSim(a,b){
+  let dot=0,na=0,nb=0;
+  for(let i=0;i<a.length;i++){dot+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
+  if(na===0||nb===0)return 0;
+  return dot/(Math.sqrt(na)*Math.sqrt(nb));
+}
+
+function tryPrettyJSON(text){
+  try{return JSON.stringify(JSON.parse(text),null,2);}catch(e){return text;}
+}
+
+/* ============================================================
+   STAGE DEFINITIONS
+   ============================================================ */
+const STAGES={
+  1:  {nm:'Spec Extraction',  ico:'\uD83D\uDCE7',col:'#4f6eff'},
+  '1b':{nm:'Drawing Reading', ico:'\uD83D\uDDBC',col:'#ec4899'},
+  2:  {nm:'Retrieval',        ico:'\uD83D\uDD0D',col:'#a855f7'},
+  3:  {nm:'Design Reasoning', ico:'\uD83E\uDDE0',col:'#00d4b4'},
+  4:  {nm:'CAD Generation',   ico:'\u2699',       col:'#00d4b4'},
+  5:  {nm:'Validation Gate',  ico:'\u2705',       col:'#a855f7'},
+  6:  {nm:'Review & 3D View', ico:'\uD83C\uDF10',col:'#4f6eff'},
+  7:  {nm:'Refinement',       ico:'\u270F',       col:'#4f6eff'},
+  8:  {nm:'Outcome Learning', ico:'\uD83D\uDCCA',col:'#f5a623'}
+};
+
+let cur=1;
+function sel(id){
+  cur=id;
+  document.querySelectorAll('.sc').forEach(c=>c.classList.remove('active'));
+  const sc=document.getElementById('sc-'+id);if(sc)sc.classList.add('active');
+  render(id);
+}
+
+function flowBar(a){
+  const ns=[1,'1b',2,3,4,5,6,7,8];
+  let h='<div class="flow">';
+  ns.forEach((n,i)=>{
+    const act=n==a?'active':'';
+    h+=`<div class="fn ${act}" onclick="sel(${JSON.stringify(n)})">
+          <div class="fb">S${n}</div>
+          <div class="flab">${STAGES[n].nm.split(' ')[0]}</div>
+        </div>`;
+    if(i<ns.length-1)h+='<div class="farr">&rarr;</div>';
+  });
+  return h+'</div>';
+}
+
+function render(id){
+  const el=document.getElementById('sc-content');
+  el.innerHTML='';el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade');
+  const s=STAGES[id];
+  let h=`<div class="dh">
+    <div class="dico" style="background:${s.col}22;border:1px solid ${s.col}44">${s.ico}</div>
+    <div><div class="dtitle">Stage ${id} &mdash; ${s.nm}</div></div>
+  </div>`;
+  h+=flowBar(id);
+  const fns={1:s1,'1b':s1b,2:s2,3:s3,4:s4,5:s5,6:s6,7:s7,8:s8};
+  h+=(fns[id]||s1)();
+  el.innerHTML=h;
+  if(id===5)initV5();
+  oRestoreCache(id);
+}
+
+/* helpers */
+function ic(l,v,s,c=''){return`<div class="ic"${c?` style="border-color:${c}33"`:''}><div class="iclbl">${l}</div><div class="icval"${c?` style="color:${c}"`:''}>${v}</div><div class="icsub">${s}</div></div>`}
+function tip(t,b){return`<div class="tipbox"><div class="tipttl">${t}</div><div class="tiptxt">${b}</div></div>`}
+function warn2(t,b){return`<div class="warnbox"><div class="warnttl">${t}</div><div class="warntxt">${b}</div></div>`}
+
+/* ---- Stage content functions ---- */
+function s1(){return`
+<div class="igrid">
+${ic('Input','Customer Email','Free-text engineering requirement')}
+${ic('Output','Structured JSON Spec','machine, dimensions, speed, unknowns')}
+${ic('Critical Failure','Hallucinated Fields','Fields not in email MUST stay null','#ff4d6d')}
+${ic('Ollama Model','llama3.1:8b','8 GB RAM &middot; CPU-friendly &middot; No GPU required','#00d4b4')}
+</div>
+<div class="opanel">
+  <div class="ophd"><span>&#129422;</span><span class="optitle">Live Run — your local Ollama</span></div>
+  <div class="ofg"><label class="ofl">Load a sample request (or paste your own below)</label>
+    <select class="fsel" id="o1-sample" style="width:100%" onchange="loadSampleEmail(this.value)"><option value="">— choose: starwheel / feed screw / guide rail —</option>${Object.entries(SAMPLE_EMAILS).map(([k,v])=>`<option value="${k}">${escHtml(v.label)}</option>`).join('')}</select>
+  </div>
+  <div class="ofg"><label class="ofl">Customer email (editable — any supported change part)</label>
+    <textarea class="ota" id="o1-input" rows="8" oninput="STAGE_INPUT_CACHE['o1-input']=this.value">${iv('o1-input',SAMPLE_EMAILS.starwheel_cap16.text)}</textarea>
+  </div>
+  <div class="ofg"><label class="ofl">Model</label>${modelPicker('o1-model','llama3.1:8b')}</div>
+  <div class="orow">
+    <button class="obtn" id="o1-btn" onclick="runStage1()">&#9654; Run with Ollama</button>
+  </div>
+  <div class="oout" id="o1-out"></div>
+</div>
+<div class="sec">&#128231; Reference Example (from the notebooks)</div>
+<div class="cb" style="white-space:pre-wrap;color:var(--t2)">From: j.hall@brewco.com  Subject: Starwheel quote request
+
+Hi, we need a replacement starwheel for our Morrison CAP-16 capper.
+16 pockets, PCD 620mm, bottle diameter 54mm. Target speed 380 CPM.
+Material should be UHMW-PE for food contact. Thickness 20mm.
+
+We don&#39;t have ovality data for this bottle -- will send later.</div>
+<div class="sec">&#128228; Extracted JSON (Stage 1 Output)</div>
+<div class="cb"><span class="ck">"machine_id"</span>:        <span class="cs">"CAP-16"</span>,
+<span class="ck">"pocket_count"</span>:       <span class="cn2">16</span>,
+<span class="ck">"pcd_mm"</span>:             <span class="cn2">620.0</span>,
+<span class="ck">"target_speed_cpm"</span>:   <span class="cn2">380</span>,
+<span class="ck">"material_id"</span>:        <span class="cs">"UHMW-PE"</span>,
+<span class="ck">"wheel_thickness_mm"</span>:  <span class="cn2">20.0</span>,
+<span class="ck">"ovality_mm"</span>:          <span class="cnl">null</span>,   <span class="cs">// not in email -- stays null</span>
+<span class="ck">"shape"</span>:               <span class="cnl">null</span>,   <span class="cs">// not in email -- stays null</span>
+<span class="ck">"unresolved_questions"</span>:[<span class="cs">"ovality_mm not provided"</span>]</div>
+${tip('&#9989; Null-Discipline Rule','<code>ovality_mm</code> and <code>shape</code> are null because the email never mentioned them. A model that guesses a plausible value here is an automatic reject regardless of how accurate the rest of the extraction is.')}
+<div class="archbox"><div class="archtitl">&#129422; Ollama Integration &mdash; Stage 1</div>
+<div class="cb" style="font-size:10px">from openai import OpenAI
+client = OpenAI(
+    base_url="http://localhost:11434/v1",  <span class="cs"># Ollama local endpoint</span>
+    api_key="ollama"                        <span class="cs"># Ignored by Ollama</span>
+)
+response = client.chat.completions.create(
+    model="llama3.1:8b",                   <span class="cs"># Replaces "openai/gpt-oss-20b"</span>
+    messages=[{"role":"system","content":SYSTEM},{"role":"user","content":email}],
+    response_format={"type":"json_object"}
+)</div></div>`}
+
+function s1b(){return`
+<div class="igrid">
+${ic('Input','Technical Drawing / Photo','Scanned drawing or bottle photograph')}
+${ic('Output','Structured JSON Spec','Same schema as Stage 1 &mdash; image input only')}
+${ic('Model Type','Vision-Language Model (VLM)','Must accept image + text in same call','#ec4899')}
+${ic('Ollama Model','qwen2.5vl:7b','8&ndash;16 GB RAM &middot; GPU strongly recommended','#00d4b4')}
+</div>
+<div class="opanel">
+  <div class="ophd"><span>&#129422;</span><span class="optitle">Live Run — your local Ollama</span></div>
+  ${hasVisionModel()?'':warn2('&#9888; No vision-capable model detected','None of your installed models look like a VLM. Pull one to actually read images: <code>ollama pull qwen2.5vl:7b</code> (or <code>llava:13b</code>). You can still try a text-only model below, but it will likely ignore the image.')}
+  <div class="ofg"><label class="ofl">Upload a drawing or bottle photo</label>
+    <input type="file" class="ofile" id="o1b-file" accept="image/*"/>
+  </div>
+  <div class="ofg"><label class="ofl">Model</label>${modelPicker('o1b-model',hasVisionModel()||'qwen2.5vl:7b')}</div>
+  <div class="orow">
+    <button class="obtn" id="o1b-btn" onclick="runStage1b()">&#9654; Run with Ollama</button>
+  </div>
+  <div class="oout" id="o1b-out"></div>
+</div>
+${tip('&#128444; Vision API with Ollama','Pass the image as a base64 data URL inside the messages[].content array. Ollama VLMs use the same OpenAI-compatible endpoint as text models.')}
+<div class="cb" style="font-size:10px">import base64
+from openai import OpenAI
+with open("bottle_drawing.png","rb") as f:
+    b64 = base64.b64encode(f.read()).decode()
+client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
+response = client.chat.completions.create(
+    model="qwen2.5vl:7b",
+    messages=[{"role":"user","content":[
+        {"type":"image_url","image_url":{"url":"data:image/png;base64,"+b64}},
+        {"type":"text","text":"Extract starwheel spec from this drawing as JSON."}
+    ]}]
+)</div>
+${warn2('&#9888; Key Difference vs Stage 1','The same null-discipline applies to images. The Stage 1b test uses a Pillow-generated sketch with unlabeled ovality/shape fields to verify VLMs obey the null rule when source is visual rather than textual.')}`}
+
+function s2(){return`
+<div class="igrid">
+${ic('Input','JSON Spec + Precedent Library','Stage 1 output + past parts with service outcomes')}
+${ic('Output','Ranked Precedent List','Top 3 similar past parts, outcome-weighted')}
+${ic('Model Type','Embedding Model','Vector similarity &mdash; no generative LLM','#a855f7')}
+${ic('Ollama Model','nomic-embed-text','2 GB RAM &middot; CPU-only &middot; No GPU needed','#00d4b4')}
+</div>
+<div class="opanel">
+  <div class="ophd"><span>&#129422;</span><span class="optitle">Live Run — your local Ollama</span></div>
+  <div class="ofg"><label class="ofl">Query spec (editable — auto-fills from Stage 1's real output once you've run it)</label>
+    <textarea class="ota" id="o2-input" rows="2" oninput="STAGE_INPUT_CACHE['o2-input']=this.value">${iv('o2-input','16-pocket starwheel, PCD 620mm, UHMW-PE, Morrison CAP-16, target speed 380 CPM')}</textarea>
+  </div>
+  <div class="ofg"><label class="ofl">Model (embeds against 3 fixed precedents below)</label>${modelPicker('o2-model','nomic-embed-text')}</div>
+  <div class="orow">
+    <button class="obtn" id="o2-btn" onclick="runStage2()">&#9654; Compute embeddings + rank</button>
+  </div>
+  <div class="oout" id="o2-out"></div>
+</div>
+<div class="sec">&#127942; Outcome-Weighted Ranking (The Critical Check)</div>
+<div class="cb" style="font-size:10px"><span class="cs"># The #1 ranked precedent MUST be the one with good outcomes,</span>
+<span class="cs"># NOT the textually-closest one that jammed.</span>
+similarity_raw  = cosine(embed(query), embed(precedent))
+outcome_weight  = 1.0 if outcome=="clean" else 0.3
+final_score     = similarity_raw * outcome_weight
+<span class="cs"># Rank by final_score (not similarity_raw).</span>
+<span class="cs"># Surfacing a failed precedent as design basis = FAIL.</span></div>
+<div class="archbox"><div class="archtitl">&#129422; Ollama Embedding API</div>
+<div class="cb" style="font-size:10px">import httpx
+def embed(text):
+    r = httpx.post("http://localhost:11434/api/embeddings",
+                   json={"model":"nomic-embed-text","prompt":text})
+    return r.json()["embedding"]
+<span class="cs"># Replaces: SentenceTransformer("BAAI/bge-m3").encode(text)</span>
+<span class="cs"># nomic-embed-text: 768-dim, ~2 GB RAM, CPU-native</span></div></div>`}
+
+function s3(){return`
+<div class="igrid">
+${ic('Input','Spec + Top Precedents','Stage 1 JSON + Stage 2 ranked library')}
+${ic('Output','3 Candidate Parameter Sets','Each with rationale, risk_flags, material')}
+${ic('Model Type','Reasoning LLM','Scale matters &mdash; 14B+ recommended','#00d4b4')}
+${ic('Ollama Model','deepseek-r1:14b','16 GB RAM &middot; 16 GB VRAM GPU recommended','#00d4b4')}
+</div>
+<div class="opanel">
+  <div class="ophd"><span>&#129422;</span><span class="optitle">Live Run — your local Ollama</span></div>
+  <div class="ofg"><label class="ofl">Spec + retrieved precedents (editable — auto-fills from Stages 1 &amp; 2)</label>
+    <textarea class="ota" id="o3-input" rows="7" oninput="STAGE_INPUT_CACHE['o3-input']=this.value">${iv('o3-input',stage3ContextText(PIPELINE_STATE.spec,PIPELINE_STATE.precedents))}</textarea>
+  </div>
+  <div class="ofg"><label class="ofl">Model</label>${modelPicker('o3-model','deepseek-r1:14b')}</div>
+  <div class="orow">
+    <button class="obtn" id="o3-btn" onclick="runStage3()">&#9654; Run with Ollama</button>
+  </div>
+  <div class="oout" id="o3-out"></div>
+</div>
+<div class="sec">&#128228; Stage 3 Output &mdash; Candidate A (Branch A / Reference Case)</div>
+<div class="cb"><span class="ck">"branch_id"</span>:           <span class="cs">"A"</span>,
+<span class="ck">"pocket_count"</span>:        <span class="cn2">16</span>,
+<span class="ck">"pcd_mm"</span>:              <span class="cn2">620.0</span>,
+<span class="ck">"pocket_radius_mm"</span>:    <span class="cn2">32.8</span>,
+<span class="ck">"pocket_clearance_mm"</span>:  <span class="cn2">0.80</span>,
+<span class="ck">"material_id"</span>:         <span class="cs">"UHMW-PE"</span>,
+<span class="ck">"rationale"</span>: <span class="cs">"Based on SW-10882 (16-pocket PCD 620, UHMW-PE,
+  outcome: clean at 380 CPM). 0.80mm clearance within ISBT floor."</span>,
+<span class="ck">"risk_flags"</span>: []</div>
+${tip('&#9989; Grounding Check (Critical)','The rationale must cite real precedent part numbers (e.g. SW-10882) and outcome keywords from the retrieved library. Generic text like "standard engineering practice" is a soft-fail regardless of parameter correctness.')}
+<div class="archbox"><div class="archtitl">&#129422; Hardware Guide &mdash; Stage 3</div>
+<div class="cb" style="font-size:10px">Model:   deepseek-r1:14b (14B params, Q4_K_M quant)
+RAM:     ~16 GB system  |  VRAM: ~12-14 GB (RTX 3090/4080/A40)
+CPU-only: works but ~3 min/response -- impractical for iteration
+
+Better:   qwen2.5:32b  -- ~24 GB VRAM, stronger reasoning
+Budget:   qwen2.5:7b   -- ~8 GB VRAM, lower quality
+
+ollama pull deepseek-r1:14b
+ollama run deepseek-r1:14b</div></div>`}
+
+function s4(){return`
+<div class="igrid">
+${ic('Input','Parameter Set (Stage 3)','One chosen candidate branch (A / B / C)')}
+${ic('Output','CadQuery Python Script','Executable code &rarr; output.step STEP solid')}
+${ic('Validation','3-Layer Harness','AST &rarr; Runtime &rarr; OCCT Geometry Probing','#00d4b4')}
+${ic('Ollama Model','qwen2.5-coder:14b','12 GB RAM &middot; GPU recommended','#00d4b4')}
+</div>
+<div class="opanel">
+  <div class="ophd"><span>&#129422;</span><span class="optitle">Live Run — your local Ollama</span></div>
+  <div class="ofg"><label class="ofl">Parameter set (editable — auto-fills from Stage 3's chosen branch)</label>
+    <textarea class="ota" id="o4-input" rows="9" oninput="STAGE_INPUT_CACHE['o4-input']=this.value">${iv('o4-input',designParamsJSON(null,null))}</textarea>
+  </div>
+  <div class="ofg"><label class="ofl">Model</label>${modelPicker('o4-model','qwen2.5-coder:14b')}</div>
+  <div class="orow">
+    <button class="obtn" id="o4-btn" onclick="runStage4()">&#9654; Run with Ollama</button>
+  </div>
+  <div class="oout" id="o4-out"></div>
+</div>
+<div class="sec">&#128295; Reference Example (from the notebooks)</div>
+<div class="cb" style="font-size:10px">import cadquery as cq, math
+PCD=620.0; N=16; r=32.8; t=20.0; bore=50.0; rim=8.0
+OD = PCD + 2*r + 2*rim  <span class="cs"># = 701.6 mm</span>
+wheel = cq.Workplane("XY").circle(OD/2).extrude(t)
+wheel = wheel.faces(">Z").workplane().circle(bore/2).cutThruAll()
+for i in range(N):
+    ang = 2*math.pi*i/N
+    x   = (PCD/2)*math.cos(ang)
+    y   = (PCD/2)*math.sin(ang)
+    wheel = wheel.faces(">Z").workplane().moveTo(x,y).circle(r).cutThruAll()
+wheel.val().exportStep("output.step")</div>
+<div class="igrid">
+${ic('Layer 1 &mdash; AST Static','Python AST parse','Valid syntax &middot; imports cadquery &middot; calls exportStep','#22d3a4')}
+${ic('Layer 2 &mdash; Runtime','Subprocess + timeout','Executes cleanly &middot; output.step exists &middot; non-empty','#22d3a4')}
+</div>
+<div class="ic" style="border-color:rgba(245,166,35,.3);margin-bottom:14px">
+  <div class="iclbl" style="color:var(--gold)">Layer 3 &mdash; OCCT Geometry Probing (Critical)</div>
+  <div class="icval" style="font-size:12px">Boolean-intersection probes across all N pockets</div>
+  <div class="icsub">Catches the "blind pocket" trap: volume can match &plusmn;0.7% even when 0 of 16 pockets are genuine through-holes. Proven in stage4_executed.ipynb to catch this exact failure mode.</div>
+</div>
+${warn2('&#9888; The Blind Pocket Trap','A model may cut pockets only partway through the disk. Volume matches within 0.7% &mdash; passing a naive check. But bottles slam into the solid wall and jam the line at 380 CPM. Only Layer 3 OCCT probing catches this. Volume checks alone are unsafe.')}`}
+
+function fsl(id,label,min,max,step,val,dec){
+  return `<div class="fg"><label class="fl">${label}</label><div class="rrow"><input type="range" id="v_${id}" min="${min}" max="${max}" step="${step}" value="${val}" class="fi" oninput="rv()"/><span class="rval" id="vv_${id}">${(+val).toFixed(dec)}</span></div></div>`;
+}
+function fsel(id,label,opts,val){
+  return `<div class="fg"><label class="fl">${label}</label><select class="fsel" id="v_${id}" onchange="rv()">${opts.map(o=>`<option value="${escHtml(o.v)}"${String(o.v)===String(val)?' selected':''}>${escHtml(o.l)}</option>`).join('')}</select></div>`;
+}
+function s5Form(type){
+  const P=CAD_STATE.params, C=CAD_STATE.common;
+  const mac=fsel('machine_id','Machine ID',Object.keys(MAC).map(m=>({v:m,l:m})),C.machine_id);
+  const mat=fsel('material_id','Material',Object.keys(MAT).map(m=>({v:m,l:m})),C.material_id);
+  const ov=fsel('ovality_mm','Container Ovality',Object.entries(OV).map(([k,v])=>({v,l:k.replace(/_/g,' ')+' ('+v+' mm)'})),C.ovality_mm);
+  const spd=fsl('target_speed_cpm','Target Speed (CPM)',100,800,10,C.target_speed_cpm,0);
+  const bd=fsl('bottle_diameter_mm','Bottle Diameter (mm)',30,120,1,C.bottle_diameter_mm,0);
+  let h=mac+mat;
+  if(type==='feed_screw'){
+    h+=fsl('pitch_mm','Pitch (mm)',40,160,2,P.pitch_mm,0)+fsl('outer_diameter_mm','Outer Diameter (mm)',80,260,5,P.outer_diameter_mm,0)
+      +fsl('root_diameter_mm','Root Diameter (mm)',40,200,5,P.root_diameter_mm,0)+fsl('length_mm','Length (mm)',200,900,10,P.length_mm,0)
+      +fsl('flight_thickness_mm','Flight Thickness (mm)',4,24,1,P.flight_thickness_mm,0)+fsl('starts','Starts (flights)',1,3,1,P.starts,0)
+      +bd+ov+spd+fsl('accumulation_backpressure_n','Accumulation Back-pressure (N)',0,300,5,C.accumulation_backpressure_n,0);
+  }else if(type==='guide_rail'){
+    h+=fsl('rail_radius_mm','Rail Inner Radius (mm)',200,700,1,P.rail_radius_mm,0)+fsl('mating_pcd_mm','Mating Starwheel PCD (mm)',480,960,10,P.mating_pcd_mm,0)
+      +fsl('arc_angle_deg','Arc Angle (°)',10,220,5,P.arc_angle_deg,0)+fsl('contact_height_mm','Contact Height (mm)',10,250,5,P.contact_height_mm,0)
+      +fsl('rail_height_mm','Rail Height (mm)',5,60,1,P.rail_height_mm,0)+fsl('thickness_mm','Thickness (mm)',3,30,1,P.thickness_mm,0)
+      +bd+fsl('bottle_height_mm','Bottle Height (mm)',80,350,5,C.bottle_height_mm,0)+ov+spd;
+  }else{
+    h+=fsl('pocket_count','Pocket Count (N)',8,24,2,P.pocket_count,0)+fsl('pcd_mm','PCD (mm)',480,960,10,P.pcd_mm,0)
+      +fsl('pocket_radius_mm','Pocket Radius (mm)',15,70,0.5,P.pocket_radius_mm,1)+fsl('pocket_clearance_mm','Pocket Clearance (mm)',0.05,2.0,0.05,P.pocket_clearance_mm,2)
+      +fsl('wheel_thickness_mm','Wheel Thickness (mm)',10,40,1,P.wheel_thickness_mm,0)+ov+spd;
+  }
+  return `<div class="vgrid">${h}</div>`;
+}
+
+function s5(){
+  const type=CAD_STATE.type;
+  const typeOpts=Object.entries(PART_TYPES).map(([k,v])=>`<option value="${k}"${k===type?' selected':''}>${escHtml(v.label)}</option>`).join('');
+  return`
+${tip('&#9940; No AI Model &mdash; By Design','Stage 5 is the deterministic safety gate. A language model&#39;s &plusmn;0.15 mm estimation error causes bottle jams at 380 CPM. All computations are exact arithmetic backed by FDA 21 CFR, ISBT &sect;4.3, ASTM D2911, OEM machine ratings (speed, screw-drive torque &amp; rpm) and material allowable loads.')}
+<div class="sec">&#128300; Live Validation Calculator</div>
+<div class="fg" style="margin-bottom:11px"><label class="fl">Change part type</label><select class="fsel" id="vtype" onchange="switchPartType(this.value)">${typeOpts}</select></div>
+<div id="v5form">${s5Form(type)}</div>
+<div id="scout"></div>`}
+
+const PART_COMMON_DEFAULTS={starwheel:{bottle_diameter_mm:54},feed_screw:{bottle_diameter_mm:66},guide_rail:{bottle_diameter_mm:54,bottle_height_mm:210}};
+function switchPartType(type){
+  if(!PART_TYPES[type])return;
+  CAD_STATE.type=type;
+  CAD_STATE.params={...PART_TYPES[type].defaults};
+  Object.assign(CAD_STATE.common,PART_COMMON_DEFAULTS[type]||{});
+  const f=document.getElementById('v5form'); if(f)f.innerHTML=s5Form(type);
+  renderCadControls();
+  rv();
+}
+function initV5(){rv();}
+
+function readV5(){
+  const T=PART_TYPES[CAD_STATE.type];
+  for(const k of Object.keys(T.defaults)){const el=document.getElementById('v_'+k);if(el)CAD_STATE.params[k]=(k==='handedness')?el.value:num(el.value,T.defaults[k]);}
+  for(const k of Object.keys(CAD_STATE.common)){const el=document.getElementById('v_'+k);if(el)CAD_STATE.common[k]=(k==='machine_id'||k==='material_id')?el.value:num(el.value,CAD_STATE.common[k]);}
+  document.querySelectorAll('#v5form input[type=range]').forEach(inp=>{
+    const s=document.getElementById('vv_'+inp.id.slice(2));
+    if(s){const step=parseFloat(inp.step)||1;s.textContent=(+inp.value).toFixed(step<0.1?2:(step<1?1:0));}
+  });
+}
+function designFromState(){return{part_type:CAD_STATE.type,...CAD_STATE.params,...CAD_STATE.common};}
+
+function rv(){
+  const el=document.getElementById('scout'); if(!el)return;
+  readV5();
+  syncCadSliders();
+  bldW();
+  const d=designFromState();
+  renderScorecard(el,validateDesign(d),d);
+}
+function rvFromState(){
+  const el=document.getElementById('scout'); if(!el)return;
+  for(const k of Object.keys(CAD_STATE.params)){const inp=document.getElementById('v_'+k);if(inp)inp.value=CAD_STATE.params[k];}
+  readV5();
+  const d=designFromState();
+  renderScorecard(el,validateDesign(d),d);
+}
+
+function renderScorecard(el,res,d){
+  const c=res.computed;
+  let ckH='';
+  Object.entries(res.checks).forEach(([k,v])=>{
+    const ico=v.pass?'&#10003;':'&#10005;', cls=v.pass?'cpass':'cfail';
+    const rsn=(!v.pass&&v.reason)?`<div class="creason">${escHtml(v.reason)}</div>`:'';
+    const cit=(!v.pass&&v.cit)?`<div class="ccit">&#128203; ${escHtml(v.cit)}</div>`:'';
+    ckH+=`<div class="crow"><div class="cico ${cls}">${ico}</div><div class="cbody"><div class="cname">${k}</div>${rsn}${cit}</div></div>`;
+  });
+  const tiles=scoreTiles(res).map(t=>{
+    const val=(t.v===null||t.v===undefined)?'N/A':t.v;
+    const pct=Math.max(0,Math.min(100,Math.round((t.pct||0)*100)));
+    return `<div class="scell"><div class="sclbl">${t.l}</div>
+    <div class="scval"><span class="${t.ok?'gp':'gf'}">${val}</span><span class="scunit"> ${t.u}</span></div>
+    <div class="pbar"><div class="pfill ${t.ok?'pg':'pr'}" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  const vcls=res.verdict==='accept'?'vacc':'vrej';
+  const vico=res.verdict==='accept'?'&#9989;':'&#10060;';
+  const sc3=res.verdict==='accept'?`<span style="margin-left:auto;font-size:11px;color:var(--t2)">Score: <b style="color:var(--grn)">${c.ws}</b></span>`:'';
+  el.innerHTML=`
+<div class="scard">
+<div class="shd"><div class="vbadge ${vcls}">${vico} ${res.verdict.toUpperCase()}</div><span style="font-size:11px;color:var(--t2);margin-left:6px">${escHtml(PART_TYPES[res.type].label)}</span>${sc3}</div>
+<div class="scomp">${tiles}</div>
+<div class="cklist">${ckH}</div></div>
+<div class="sec">&#128208; Formulas (from stage5_engine.py)</div>
+<div class="cb" style="font-size:10px">${formulasFor(res,d)}</div>`;
+}
+
+function s6(){return`
+<div class="igrid">
+${ic('Input','Validated Scorecard','Stage 5 accept result + full design params')}
+${ic('Output','Two-Audience Views','Engineer (full detail) + Customer (filtered)')}
+</div>
+${tip('&#127760; This Dashboard IS Stage 6','The viewer on the right is what Stage 6 delivers: a live 3D model of whichever change part the customer described (starwheel, feed screw or guide rail), plus a <b>2D Drawing</b> tab that renders a dimensioned customer-view drawing &mdash; dimensions only, with cost and internal tolerances withheld exactly as customer_view() below prescribes. The original notebook generates a standalone starwheel_viewer.html; this dashboard extends it to all supported parts.')}
+<div class="sec">&#128274; Access Control &mdash; Allowlist Architecture</div>
+<div class="cb" style="font-size:10px"><span class="cs"># customer_view() uses an EXPLICIT ALLOWLIST (not a blocklist).</span>
+<span class="cs"># Safer failure mode: new fields default to HIDDEN, not leaked.</span>
+CUSTOMER_ALLOWED = {
+    "branch_id","verdict","pocket_count","pcd_mm",
+    "pocket_radius_mm","wheel_thickness_mm","material_id"
+}
+<span class="cs"># Hidden from customer: cost_index, tolerance_mm, weighted_score, rank</span>
+def customer_view(scorecard):
+    return {k:v for k,v in scorecard.items() if k in CUSTOMER_ALLOWED}</div>
+<div class="igrid">
+${ic('&#128119; Engineer View','Full scorecard','All params + cost + tolerances + score + rank','#4f6eff')}
+${ic('&#127981; Customer View','Filtered view','Params only &mdash; cost, tolerances, score all hidden','#00d4b4')}
+</div>`}
+
+function s7(){return`
+<div class="igrid">
+${ic('Input','Edit Instruction + Design','"Open pockets by 0.3mm" + current params')}
+${ic('Output','Delta + Unchanged List','Only changed params + explicit unchanged list')}
+${ic('Critical Failure','Silent Parameter Drift','Untouched params must appear in unchanged list','#ff4d6d')}
+${ic('Ollama Model','llama3.1:8b','Same model as Stage 1 &mdash; efficient reuse','#00d4b4')}
+</div>
+<div class="opanel">
+  <div class="ophd"><span>&#129422;</span><span class="optitle">Live Run — your local Ollama</span></div>
+  <div class="ofg"><label class="ofl">Current design (editable — auto-fills from Stage 3's chosen branch)</label>
+    <textarea class="ota" id="o7-base" rows="9" oninput="STAGE_INPUT_CACHE['o7-base']=this.value">${iv('o7-base',refinementBaseJSON(null,null))}</textarea>
+  </div>
+  <div class="ofg"><label class="ofl">Edit instruction (editable)</label>
+    <textarea class="ota" id="o7-instr" rows="2" oninput="STAGE_INPUT_CACHE['o7-instr']=this.value">${iv('o7-instr','Open the pockets up by 0.3mm to give more clearance margin.')}</textarea>
+  </div>
+  <div class="ofg"><label class="ofl">Model</label>${modelPicker('o7-model','llama3.1:8b')}</div>
+  <div class="orow">
+    <button class="obtn" id="o7-btn" onclick="runStage7()">&#9654; Run with Ollama</button>
+  </div>
+  <div class="oout" id="o7-out"></div>
+  <div class="ohint">The revalidation verdict below is computed by the real Stage 5 engine on this page, not the LLM — the LLM only proposes the delta.</div>
+</div>
+<div class="sec">&#9999; Example Refinement Request</div>
+<div class="cb" style="white-space:pre-wrap;color:var(--t2)">"Open the pockets up by 0.3mm to give more clearance margin."</div>
+<div class="sec">&#128228; Expected Stage 7 Output</div>
+<div class="cb"><span class="ck">"delta"</span>: {
+  <span class="ck">"pocket_radius_mm"</span>:    <span class="cn2">33.1</span>,  <span class="cs">// was 32.8</span>
+  <span class="ck">"pocket_clearance_mm"</span>:  <span class="cn2">0.50</span>,  <span class="cs">// recalculated</span>
+},
+<span class="ck">"unchanged"</span>: [<span class="cs">"pocket_count"</span>, <span class="cs">"pcd_mm"</span>, <span class="cs">"material_id"</span>,
+              <span class="cs">"machine_id"</span>, <span class="cs">"wheel_thickness_mm"</span>],
+<span class="ck">"revalidation"</span>: {<span class="ck">"verdict"</span>: <span class="cs">"reject"</span>} <span class="cs">// 0.20mm -- strict inequality!</span></div>
+${warn2('&#9888; The Silent Drift Failure Mode','A model that correctly executes the edit but also silently adjusts pcd_mm by 1mm "for rounding" is a worse failure than one that gets the pocket size wrong. Per the source doc: silent drift on any untouched parameter is an automatic reject.')}`}
+
+function s8(){return`
+<div class="igrid">
+${ic('Input','Design Margins Table','Clearance, speed util, material wear class, web…')}
+${ic('Output','Predicted Jam Rate %','Feeds back into Stage 2 outcome_weight')}
+${ic('Model Type','Gradient Boosting ML','GBM / XGBoost / LightGBM &mdash; no LLM','#f5a623')}
+${ic('Runs On','Any Machine','100% local &middot; &lt;1 GB RAM &middot; CPU &middot; No GPU','#22d3a4')}
+</div>
+${tip('&#128202; Why Classical ML, Not LLM?','Stage 8 is tabular jam-rate regression on structured features. Gradient boosting consistently beats LLMs on tabular data. This is the one stage that runs 100% for real everywhere with no network access or GPU needed.')}
+<div class="sec">&#128202; Model Comparison (Stage 8 Notebook)</div>
+<div class="cb"><span class="ck">"LightGBM"</span>:    MAE=<span class="cn2">0.047</span>  &#127941; <span class="cs">WINNER</span>
+<span class="ck">"XGBoost"</span>:     MAE=<span class="cn2">0.051</span>
+<span class="ck">"GBM"</span>:         MAE=<span class="cn2">0.059</span>
+<span class="ck">"RandomForest"</span>: MAE=<span class="cn2">0.071</span>
+<span class="ck">"Linear"</span>:       MAE=<span class="cn2">0.118</span>
+<span class="ck">"MeanBaseline"</span>: MAE=<span class="cn2">0.193</span>  <span class="cs">// LightGBM beats baseline by 4.1x</span></div>
+<div class="sec">&#128273; Top Feature Importances (Must Match Source Doc)</div>
+<div class="cb"><span class="ck">"effective_clearance_mm"</span>:  <span class="cn2">0.412</span>  <span class="cs">// #1 (+) tighter = more jams</span>
+<span class="ck">"speed_utilisation"</span>:       <span class="cn2">0.278</span>  <span class="cs">// #2 (+) faster = more jams</span>
+<span class="ck">"material_wear_class"</span>:      <span class="cn2">0.189</span>  <span class="cs">// #3 (-) better wear = fewer jams</span>
+<span class="ck">"web_thickness_mm"</span>:         <span class="cn2">0.077</span>
+<span class="ck">"pocket_count"</span>:             <span class="cn2">0.044</span></div>
+${tip('&#128260; Feedback Loop into Stage 2','Stage 8 predicted jam rates become the outcome_weight in Stage 2 retrieval ranking. High-jam-risk designs are de-ranked as precedents, preventing the pipeline from reusing a textually-similar but operationally failed design.')}`}
+
+/* ============================================================
+   THREE.JS 3D VIEWER
+   ============================================================ */
+let scene,camera,renderer,controls,wg=null,spinning=false,wframe=false,glReady=false;
+
+function viewerFallback(msg){
+  const ci=document.getElementById('ci'); if(ci)ci.textContent=msg;
+  ['bspin','bwire'].forEach(id=>{const b=document.getElementById(id);if(b){b.disabled=true;b.style.opacity=.4;b.style.cursor='not-allowed';}});
+  const rst=document.querySelector('.vbtn[onclick="rCam()"]'); if(rst){rst.disabled=true;rst.style.opacity=.4;rst.style.cursor='not-allowed';}
+}
+
+function initGL(){
+  if(typeof THREE==='undefined'){
+    console.error('Three.js failed to load (CDN blocked or offline). 3D viewer disabled; geometry stats below still work.');
+    viewerFallback('⚠ 3D viewer unavailable — Three.js did not load (check internet/CDN access). Geometry stats still update below.');
+    return;
+  }
+  try{
+    const cont=document.getElementById('ccc'), cv=document.getElementById('cv');
+    scene=new THREE.Scene();
+    scene.fog=new THREE.Fog(0x040710,500,2500);
+    const w=cont.clientWidth||400, h=cont.clientHeight||400;
+    camera=new THREE.PerspectiveCamera(45,w/h,1,5000);
+    camera.position.set(0,780,560); camera.lookAt(0,0,0);
+    renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+    renderer.setSize(w,h); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.shadowMap.enabled=true;
+    if(typeof THREE.OrbitControls!=='function')throw new Error('THREE.OrbitControls not available');
+    controls=new THREE.OrbitControls(camera,renderer.domElement);
+    controls.enableDamping=true; controls.dampingFactor=0.07;
+    controls.minDistance=80; controls.maxDistance=1800;
+    // Lights
+    scene.add(new THREE.AmbientLight(0x1a2040,0.9));
+    const dl=new THREE.DirectionalLight(0xffffff,1.3); dl.position.set(300,500,400); dl.castShadow=true; scene.add(dl);
+    const rl=new THREE.DirectionalLight(0x4f6eff,0.7); rl.position.set(-400,-200,-300); scene.add(rl);
+    const tl=new THREE.PointLight(0x00d4b4,0.9,900); tl.position.set(-300,200,300); scene.add(tl);
+    const grid=new THREE.GridHelper(1000,18,0x141f38,0x0e1630); grid.position.y=-45; scene.add(grid);
+    glReady=true;
+    bldW(); loop();
+    window.addEventListener('resize',onRz);
+  }catch(err){
+    console.error('3D viewer init failed:', err);
+    glReady=false;
+    viewerFallback('⚠ 3D viewer failed to start ('+err.message+'). Geometry stats still update below.');
+  }
+}
+
+/* ---- Viewer state <-> controls ---- */
+let viewMode='3d', lastBuiltType=null, lastExtent=351;
+function fmtStep(v,step){return(+v).toFixed(step<0.1?2:(step<1?1:0));}
+function renderCadControls(){
+  const T=PART_TYPES[CAD_STATE.type], c=document.getElementById('cad-controls'); if(!c)return;
+  c.innerHTML=T.sliders.map(s=>`<div class="crow2"><span class="clbl">${s.l}</span><input type="range" id="cs_${s.k}" min="${s.min}" max="${s.max}" step="${s.step}" value="${CAD_STATE.params[s.k]}" oninput="uCAD()"/><span class="cval" id="cv_${s.k}">${fmtStep(CAD_STATE.params[s.k],s.step)}</span></div>`).join('');
+  const lbl=document.getElementById('cad-type-lbl'); if(lbl)lbl.textContent=T.label;
+}
+function syncCadSliders(){
+  const T=PART_TYPES[CAD_STATE.type];
+  T.sliders.forEach(s=>{const inp=document.getElementById('cs_'+s.k);if(inp){inp.value=CAD_STATE.params[s.k];const sp=document.getElementById('cv_'+s.k);if(sp)sp.textContent=fmtStep(CAD_STATE.params[s.k],s.step);}});
+  const lbl=document.getElementById('cad-type-lbl'); if(lbl)lbl.textContent=T.label;
+}
+function uCAD(){
+  const T=PART_TYPES[CAD_STATE.type];
+  T.sliders.forEach(s=>{const inp=document.getElementById('cs_'+s.k);if(inp){CAD_STATE.params[s.k]=num(inp.value,CAD_STATE.params[s.k]);const sp=document.getElementById('cv_'+s.k);if(sp)sp.textContent=fmtStep(CAD_STATE.params[s.k],s.step);}});
+  bldW();
+  rvFromState();
+}
+/* A Stage-1 spec or a Stage-3 branch drives the viewer: switch part type, apply every stated value. */
+function applySpecToCad(spec){
+  const type=PART_TYPES[spec.part_type]?spec.part_type:CAD_STATE.type, T=PART_TYPES[type];
+  CAD_STATE.type=type;
+  const params={...T.defaults};
+  for(const k of Object.keys(T.defaults)){if(has(spec[k]))params[k]=(k==='handedness')?String(spec[k]):num(spec[k],T.defaults[k]);}
+  CAD_STATE.params=params;
+  for(const k of Object.keys(CAD_STATE.common)){
+    if(!has(spec[k]))continue;
+    if(k==='machine_id'){if(MAC[spec[k]])CAD_STATE.common[k]=spec[k];}
+    else if(k==='material_id'){if(MAT[spec[k]])CAD_STATE.common[k]=spec[k];}
+    else CAD_STATE.common[k]=num(spec[k],CAD_STATE.common[k]);
+  }
+  renderCadControls();
+  bldW();
+  const f=document.getElementById('v5form');
+  if(f){f.innerHTML=s5Form(type);const vt=document.getElementById('vtype');if(vt)vt.value=type;rv();}
+}
+function setView(mode){
+  viewMode=mode;
+  const cv=document.getElementById('cv'), dv=document.getElementById('dv');
+  if(cv)cv.style.display=mode==='3d'?'block':'none';
+  if(dv)dv.style.display=mode==='2d'?'block':'none';
+  document.getElementById('b3d').classList.toggle('active',mode==='3d');
+  document.getElementById('b2d').classList.toggle('active',mode==='2d');
+  if(mode==='2d')draw2D();
+}
+
+/* ---- Geometry builders (all lie in the XZ ground plane, Y up; camera looks down from +Y/+Z) ---- */
+function gridGeom(fn,nu,nv){
+  const pos=[],idx=[];
+  for(let i=0;i<=nu;i++){const u=i/nu;for(let j=0;j<=nv;j++){const p=fn(u,j/nv);pos.push(p[0],p[1],p[2]);}}
+  for(let i=0;i<nu;i++)for(let j=0;j<nv;j++){const a=i*(nv+1)+j,b=a+nv+1;idx.push(a,b,a+1,b,b+1,a+1);}
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setIndex(idx);g.computeVertexNormals();return g;
+}
+const MAT_BODY=()=>new THREE.MeshStandardMaterial({color:0x243060,metalness:0.15,roughness:0.55,wireframe:wframe});
+const MAT_FLIGHT=()=>new THREE.MeshStandardMaterial({color:0x2f8f82,metalness:0.1,roughness:0.5,side:THREE.DoubleSide,wireframe:wframe});
+const MAT_GHOST=()=>new THREE.MeshStandardMaterial({color:0x8b9cbf,transparent:true,opacity:0.22,depthWrite:false});
+const MAT_HOLE=()=>new THREE.MeshStandardMaterial({color:0x050810,side:THREE.BackSide});
+
+function buildStarwheel(g,P,C){
+  const pcd=P.pcd_mm,n=Math.max(1,Math.round(P.pocket_count)),r=P.pocket_radius_mm,t=P.wheel_thickness_mm,rim=P.rim_mm,bore=P.bore_diameter_mm,OD=pcd+2*r+2*rim;
+  const disk=new THREE.Mesh(new THREE.CylinderGeometry(OD/2,OD/2,t,96,1),MAT_BODY());disk.castShadow=true;g.add(disk);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(bore/2+0.5,bore/2+0.5,t+2,32),MAT_HOLE()));
+  const brg=new THREE.Mesh(new THREE.TorusGeometry(bore/2,1.5,8,32),new THREE.MeshStandardMaterial({color:0xff4d6d,emissive:0xff1040,emissiveIntensity:.5}));
+  brg.rotation.x=Math.PI/2;brg.position.y=t/2+1;g.add(brg);
+  const pGeo=new THREE.CylinderGeometry(r,r,t+4,28), pMat=MAT_HOLE();
+  const prMat=new THREE.MeshStandardMaterial({color:0x00d4b4,emissive:0x009e8c,emissiveIntensity:.6});
+  for(let i=0;i<n;i++){
+    const a=2*Math.PI*i/n, px=(pcd/2)*Math.cos(a), pz=(pcd/2)*Math.sin(a);
+    const pc=new THREE.Mesh(pGeo,pMat);pc.position.set(px,0,pz);g.add(pc);
+    const pr=new THREE.Mesh(new THREE.TorusGeometry(r,1.2,7,32),prMat);pr.position.set(px,t/2+1.5,pz);pr.rotation.x=Math.PI/2;g.add(pr);
+  }
+  const bc=new THREE.Mesh(new THREE.TorusGeometry(pcd/2,0.7,5,120),new THREE.MeshStandardMaterial({color:0x00d4b4,emissive:0x004d44,emissiveIntensity:.4,transparent:true,opacity:.45}));
+  bc.position.y=t/2+2;bc.rotation.x=Math.PI/2;g.add(bc);
+  const or2=new THREE.Mesh(new THREE.TorusGeometry(OD/2,1.8,7,120),new THREE.MeshStandardMaterial({color:0x4f6eff,emissive:0x1a2888,emissiveIntensity:.4,transparent:true,opacity:.6}));
+  or2.position.y=t/2+1;or2.rotation.x=Math.PI/2;g.add(or2);
+  return OD/2;
+}
+
+function buildFeedScrew(g,P,C){
+  const od=P.outer_diameter_mm,root=Math.min(P.root_diameter_mm,od-2),len=P.length_mm,pitch=P.pitch_mm,ft=P.flight_thickness_mm;
+  const starts=Math.max(1,Math.round(P.starts)), hand=String(P.handedness||'RH').toUpperCase().startsWith('L')?-1:1;
+  const core=new THREE.Mesh(new THREE.CylinderGeometry(root/2,root/2,len,48,1),MAT_BODY());core.rotation.z=Math.PI/2;core.castShadow=true;g.add(core);
+  const lead=pitch*starts, turns=len/lead, nu=Math.max(24,Math.round(turns*40));
+  const x=u=>-len/2+len*u, r0=root/2-1, r1=od/2, fm=MAT_FLIGHT();
+  for(let s=0;s<starts;s++){
+    const off=2*Math.PI*s/starts, th=u=>hand*2*Math.PI*turns*u+off;
+    const surf=(dx)=>gridGeom((u,v)=>{const r=r0+(r1-r0)*v,t=th(u);return[x(u)+dx,r*Math.cos(t),r*Math.sin(t)];},nu,2);
+    g.add(new THREE.Mesh(surf(ft/2),fm));g.add(new THREE.Mesh(surf(-ft/2),fm));
+    g.add(new THREE.Mesh(gridGeom((u,w)=>{const t=th(u);return[x(u)-ft/2+ft*w,r1*Math.cos(t),r1*Math.sin(t)];},nu,1),fm));
+  }
+  const bd=C.bottle_diameter_mm,bh=C.bottle_height_mm,nEng=Math.floor(len/pitch);
+  const gm=MAT_GHOST();
+  for(let k=0;k<Math.min(nEng,5);k++){
+    const bx=-len/2+pitch*(k+0.5)+pitch*0.25; if(bx+bd/2>len/2)break;
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,bh*0.8,32),gm);b.position.set(bx,0,root/2+bd/2+0.5);g.add(b);
+  }
+  const cl=new THREE.Mesh(new THREE.BoxGeometry(len,2,1),new THREE.MeshStandardMaterial({color:0x4f6eff,emissive:0x1a2888,emissiveIntensity:.5}));
+  cl.position.set(0,-od/2-6,0);g.add(cl);
+  return len/2+od/2;
+}
+
+function buildGuideRail(g,P,C){
+  const R=P.rail_radius_mm,t=P.thickness_mm,h=P.rail_height_mm,arc=P.arc_angle_deg*Math.PI/180,pcd=P.mating_pcd_mm,bd=C.bottle_diameter_mm,bh=C.bottle_height_mm;
+  // Shape y maps to world -z after rotation.x=-90deg, so an arc centred on -90deg faces the camera (+z).
+  const a0=-Math.PI/2-arc/2,a1=-Math.PI/2+arc/2;
+  const sh=new THREE.Shape();sh.absarc(0,0,R,a0,a1,false);sh.absarc(0,0,R+t,a1,a0,true);
+  const rail=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false,curveSegments:64}),
+    new THREE.MeshStandardMaterial({color:0x4f6eff,emissive:0x1a2888,emissiveIntensity:.35,metalness:0.15,roughness:0.5,wireframe:wframe}));
+  rail.rotation.x=-Math.PI/2;rail.position.y=-h/2;rail.castShadow=true;rail.name='rail';g.add(rail);
+  const wheelR=pcd/2+bd/2+9;
+  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(wheelR,wheelR,16,96,1),new THREE.MeshStandardMaterial({color:0x243060,transparent:true,opacity:0.22,depthWrite:false}));
+  wheel.position.y=-h/2-9;g.add(wheel);
+  const bc=new THREE.Mesh(new THREE.TorusGeometry(pcd/2,0.7,5,120),new THREE.MeshStandardMaterial({color:0x00d4b4,emissive:0x004d44,emissiveIntensity:.4,transparent:true,opacity:.5}));
+  bc.rotation.x=Math.PI/2;g.add(bc);
+  const N=Math.max(1,Math.round(Math.PI*pcd/(2.2*bd))), nArc=Math.max(1,Math.round(arc/(2*Math.PI)*N)), gm=MAT_GHOST();
+  for(let i=0;i<nArc;i++){
+    const a=Math.PI/2+(i-(nArc-1)/2)*(2*Math.PI/N);
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(bd/2,bd/2,bh*0.6,32),gm);b.position.set((pcd/2)*Math.cos(a),bh*0.3-h/2,(pcd/2)*Math.sin(a));g.add(b);
+  }
+  return R+t;
+}
+
+function bldW(){
+  const type=CAD_STATE.type,P=CAD_STATE.params,C=CAD_STATE.common;
+  updGS();
+  if(viewMode==='2d')draw2D();
+  if(!glReady)return;
+  if(wg){scene.remove(wg);wg=null;}
+  wg=new THREE.Group();
+  let extent,ciText;
+  if(type==='feed_screw'){extent=buildFeedScrew(wg,P,C);ciText='Feed screw ⌀'+P.outer_diameter_mm+' × '+P.length_mm+'mm · pitch '+P.pitch_mm+'mm · '+Math.round(P.starts)+'-start '+P.handedness;}
+  else if(type==='guide_rail'){extent=buildGuideRail(wg,P,C);ciText='Guide rail R'+P.rail_radius_mm+'mm · '+P.arc_angle_deg+'° · '+P.rail_height_mm+'×'+P.thickness_mm+'mm';}
+  else{extent=buildStarwheel(wg,P,C);ciText='⌀ '+(P.pcd_mm+2*P.pocket_radius_mm+2*P.rim_mm).toFixed(0)+'mm × '+P.wheel_thickness_mm+'mm · PCD '+P.pcd_mm+'mm';}
+  scene.add(wg);
+  lastExtent=extent;
+  const ci=document.getElementById('ci'); if(ci)ci.textContent=ciText+'  ·  Drag orbit · Scroll zoom';
+  if(lastBuiltType!==type){lastBuiltType=type;fitCamera(extent);}
+}
+function fitCamera(e){
+  if(!glReady)return;
+  // Portrait panel: the limiting half-view is horizontal, so scale distance by min(1, aspect).
+  const d=(e*1.15)/(Math.tan(camera.fov*Math.PI/360)*Math.min(1,camera.aspect||1));
+  camera.position.set(0,0.81*d,0.59*d);
+  controls.target.set(0,0,0);camera.lookAt(0,0,0);controls.update();
+}
+
+function updGS(){
+  const el=document.getElementById('gs'); if(!el)return;
+  const d=designFromState(), res=validateDesign(d), c=res.computed, P=CAD_STATE.params, C=CAD_STATE.common;
+  const ok=(b,s)=>'<span class="'+(b?'gp':'gf')+'">'+s+'</span>';
+  if(CAD_STATE.type==='feed_screw'){
+    el.innerHTML='OD <span style="color:var(--acc)">'+P.outer_diameter_mm+'</span> · root '+P.root_diameter_mm+' · L '+P.length_mm+' mm · lead '+(P.pitch_mm*Math.max(1,Math.round(P.starts)))+' mm<br/>'
+      +'Pocket: '+ok(c.ec>0.2&&c.clr<=6,c.pocketW+' mm wide, clr '+c.clr+' mm')+' for ⌀'+C.bottle_diameter_mm+' bottle<br/>'
+      +'Engaged: <span style="color:var(--teal)">'+c.nEng+' bottles</span> · '+ok(c.maxRpm!==null&&c.rpm<=c.maxRpm,c.rpm+' rpm')+' · '+ok(c.maxT!==null&&c.torque<=c.maxT,c.torque+' N·m')+'<br/>'
+      +'Verdict: '+ok(res.verdict==='accept',res.verdict.toUpperCase());
+  }else if(CAD_STATE.type==='guide_rail'){
+    const arcLen=P.arc_angle_deg/360*2*Math.PI*(P.rail_radius_mm+P.thickness_mm/2);
+    el.innerHTML='R<sub>in</sub> <span style="color:var(--acc)">'+P.rail_radius_mm+'</span> · R<sub>out</sub> '+(P.rail_radius_mm+P.thickness_mm)+' · '+P.arc_angle_deg+'° (arc ≈ '+arcLen.toFixed(0)+' mm)<br/>'
+      +'Gap to bottle: '+ok(c.eg>0.2&&c.gap<=5,c.gap+' mm (eff '+c.eg+')')+' on PCD '+P.mating_pcd_mm+'<br/>'
+      +'Section '+P.rail_height_mm+'×'+P.thickness_mm+' mm · load '+ok(c.allow!==null&&c.load<=c.allow,c.load+' N')+' · '+c.nArc+' bottles in arc<br/>'
+      +'Verdict: '+ok(res.verdict==='accept',res.verdict.toUpperCase());
+  }else{
+    const OD=P.pcd_mm+2*P.pocket_radius_mm+2*P.rim_mm, n=Math.round(P.pocket_count), r=P.pocket_radius_mm;
+    const vol=Math.PI*(OD*OD/4-n*r*r-Math.pow(P.bore_diameter_mm/2,2))*P.wheel_thickness_mm;
+    el.innerHTML='OD: <span style="color:var(--acc)">'+OD.toFixed(1)+' mm</span> · T: '+P.wheel_thickness_mm+' mm · Bore: '+P.bore_diameter_mm+' mm<br/>'
+      +'Web: '+ok(c.web>=8,c.web+' mm '+(c.web>=8?'✓':'✗ < 8mm'))+'<br/>'
+      +'Pockets: <span style="color:var(--teal)">'+n+' × ⌀'+(r*2).toFixed(1)+'mm</span> on PCD '+P.pcd_mm+'mm<br/>'
+      +'Vol ≈ <span style="color:var(--gold)">'+vol.toFixed(0)+' mm³</span> · Verdict: '+ok(res.verdict==='accept',res.verdict.toUpperCase());
+  }
+}
+
+/* ---- 2D dimensioned drawing (the "example CAD drawing" for the customer) ---- */
+function svgDimH(x1,x2,y,label){return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#f5a623" stroke-width="0.8" marker-start="url(#ar)" marker-end="url(#ar)"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><text x="${(x1+x2)/2}" y="${y-3}" text-anchor="middle" class="dvl" fill="#f5a623">${label}</text>`;}
+function svgDimV(x,y1,y2,label,side){const left=side==='left';return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#f5a623" stroke-width="0.8" marker-start="url(#ar)" marker-end="url(#ar)"/><line x1="${x-6}" y1="${y1}" x2="${x+6}" y2="${y1}" stroke="#f5a623" stroke-width="0.6"/><line x1="${x-6}" y1="${y2}" x2="${x+6}" y2="${y2}" stroke="#f5a623" stroke-width="0.6"/><text x="${left?x-4:x+4}" y="${(y1+y2)/2+3}" text-anchor="${left?'end':'start'}" class="dvl" fill="#f5a623">${label}</text>`;}
+function svgDimHStart(x1,x2,y,label){return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#f5a623" stroke-width="0.8" marker-start="url(#ar)" marker-end="url(#ar)"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><text x="${x1}" y="${y-3}" text-anchor="start" class="dvl" fill="#f5a623">${label}</text>`;}
+function draw2D(){
+  const dv=document.getElementById('dv'); if(!dv)return;
+  const P=CAD_STATE.params,C=CAD_STATE.common,type=CAD_STATE.type,T=PART_TYPES[type];
+  const W=400,H=400; let body='', title=T.label;
+  const defs=`<defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f5a623"/></marker></defs>`;
+  if(type==='starwheel'){
+    const pcd=P.pcd_mm,n=Math.round(P.pocket_count),r=P.pocket_radius_mm,OD=pcd+2*r+2*P.rim_mm,s=250/OD,cx=200,cy=190;
+    body+=`<circle cx="${cx}" cy="${cy}" r="${OD/2*s}" fill="#141f38" stroke="#eef2ff" stroke-width="1.2"/>`;
+    body+=`<circle cx="${cx}" cy="${cy}" r="${pcd/2*s}" fill="none" stroke="#00d4b4" stroke-width="0.6" stroke-dasharray="4 3"/>`;
+    for(let i=0;i<n;i++){const a=2*Math.PI*i/n;body+=`<circle cx="${cx+pcd/2*s*Math.cos(a)}" cy="${cy+pcd/2*s*Math.sin(a)}" r="${r*s}" fill="#0a0f1c" stroke="#00d4b4" stroke-width="0.9"/>`;}
+    body+=`<circle cx="${cx}" cy="${cy}" r="${P.bore_diameter_mm/2*s}" fill="#0a0f1c" stroke="#ff4d6d" stroke-width="0.9"/>`;
+    body+=`<line x1="${cx-OD/2*s-8}" y1="${cy}" x2="${cx+OD/2*s+8}" y2="${cy}" stroke="#45506e" stroke-width="0.5" stroke-dasharray="8 3 2 3"/><line x1="${cx}" y1="${cy-OD/2*s-8}" x2="${cx}" y2="${cy+OD/2*s+8}" stroke="#45506e" stroke-width="0.5" stroke-dasharray="8 3 2 3"/>`;
+    body+=svgDimH(cx-OD/2*s,cx+OD/2*s,cy+OD/2*s+22,'⌀'+OD.toFixed(1)+' OD');
+    body+=svgDimH(cx-pcd/2*s,cx+pcd/2*s,cy-OD/2*s-14,'PCD '+pcd);
+    body+=`<text x="${cx+pcd/2*s+r*s+4}" y="${cy-r*s-2}" class="dvl" fill="#00d4b4">${n}× ⌀${(2*r).toFixed(1)} THRU</text>`;
+    body+=`<text x="${cx+P.bore_diameter_mm/2*s+4}" y="${cy+r*s+10}" class="dvl" fill="#ff4d6d">BORE ⌀${P.bore_diameter_mm}</text>`;
+    title+=' — TOP VIEW · t = '+P.wheel_thickness_mm+' mm';
+  }else if(type==='feed_screw'){
+    const len=P.length_mm,od=P.outer_diameter_mm,root=P.root_diameter_mm,pitch=P.pitch_mm,ft=P.flight_thickness_mm,starts=Math.max(1,Math.round(P.starts));
+    const s=Math.min(250/len,150/od),cx=200,cy=175,L=len*s,x0=cx-L/2;
+    body+=`<rect x="${x0}" y="${cy-root/2*s}" width="${L}" height="${root*s}" fill="#141f38" stroke="#eef2ff" stroke-width="1"/>`;
+    const depth=(od-root)/2*s, nT=Math.floor(len/pitch)*starts;
+    for(let k=0;k<nT;k++){const fx=x0+(k*pitch/starts)*s;if(fx+ft*s>x0+L)break;
+      body+=`<rect x="${fx}" y="${cy-od/2*s}" width="${ft*s}" height="${depth}" fill="#2f8f82" stroke="#00d4b4" stroke-width="0.6"/><rect x="${fx+(pitch/2)*s}" y="${cy+root/2*s}" width="${ft*s}" height="${depth}" fill="#2f8f82" stroke="#00d4b4" stroke-width="0.6"/>`;}
+    body+=`<line x1="${x0-10}" y1="${cy}" x2="${x0+L+10}" y2="${cy}" stroke="#45506e" stroke-width="0.5" stroke-dasharray="8 3 2 3"/>`;
+    body+=svgDimH(x0,x0+L,cy+od/2*s+26,'L '+len);
+    body+=svgDimHStart(x0,x0+pitch*s,cy-od/2*s-14,'PITCH '+pitch+(starts>1?' · '+starts+'-START · LEAD '+pitch*starts:''));
+    body+=svgDimV(x0+L+16,cy-od/2*s,cy+od/2*s,'⌀'+od+' OD','right');
+    body+=svgDimV(x0-16,cy-root/2*s,cy+root/2*s,'⌀'+root+' ROOT','left');
+    title+=' — SIDE ELEVATION · '+P.handedness+' · flight t = '+ft+' mm';
+  }else{
+    const R=P.rail_radius_mm,t=P.thickness_mm,arc=P.arc_angle_deg*Math.PI/180,pcd=P.mating_pcd_mm,bd=C.bottle_diameter_mm;
+    const s=170/(R+t),cx=200,cy=250,a0=-Math.PI/2-arc/2,a1=-Math.PI/2+arc/2;
+    const pt=(r,a)=>[cx+r*s*Math.cos(a),cy+r*s*Math.sin(a)];
+    const p1=pt(R,a0),p2=pt(R,a1),p3=pt(R+t,a1),p4=pt(R+t,a0),big=arc>Math.PI?1:0;
+    body+=`<path d="M${p1[0]},${p1[1]} A${R*s},${R*s} 0 ${big} 1 ${p2[0]},${p2[1]} L${p3[0]},${p3[1]} A${(R+t)*s},${(R+t)*s} 0 ${big} 0 ${p4[0]},${p4[1]} Z" fill="#141f38" stroke="#eef2ff" stroke-width="1.2"/>`;
+    body+=`<circle cx="${cx}" cy="${cy}" r="${pcd/2*s}" fill="none" stroke="#00d4b4" stroke-width="0.6" stroke-dasharray="4 3"/>`;
+    const N=Math.max(1,Math.round(Math.PI*pcd/(2.2*bd))),nArc=Math.max(1,Math.round(arc/(2*Math.PI)*N));
+    for(let i=0;i<nArc;i++){const a=-Math.PI/2+(i-(nArc-1)/2)*(2*Math.PI/N);const q=pt(pcd/2,a);body+=`<circle cx="${q[0]}" cy="${q[1]}" r="${bd/2*s}" fill="none" stroke="#8b9cbf" stroke-width="0.6" stroke-dasharray="2 2"/>`;}
+    const rm=pt(R,-Math.PI/2);
+    body+=`<line x1="${cx}" y1="${cy}" x2="${rm[0]}" y2="${rm[1]}" stroke="#f5a623" stroke-width="0.8" marker-end="url(#ar)"/><text x="${cx+6}" y="${cy-R*0.82*s}" class="dvl" fill="#f5a623">R${R} (inner)</text>`;
+    body+=`<line x1="${cx-8}" y1="${cy}" x2="${cx+8}" y2="${cy}" stroke="#45506e"/><line x1="${cx}" y1="${cy-8}" x2="${cx}" y2="${cy+8}" stroke="#45506e"/>`;
+    body+=`<path d="M${pt(R*0.45,a0)[0]},${pt(R*0.45,a0)[1]} A${R*0.45*s},${R*0.45*s} 0 ${big} 1 ${pt(R*0.45,a1)[0]},${pt(R*0.45,a1)[1]}" fill="none" stroke="#f5a623" stroke-width="0.6" marker-start="url(#ar)" marker-end="url(#ar)"/><text x="${cx}" y="${cy-R*0.45*s+12}" text-anchor="middle" class="dvl" fill="#f5a623">${P.arc_angle_deg}°</text>`;
+    body+=`<text x="${p3[0]+4}" y="${p3[1]}" class="dvl" fill="#f5a623">t = ${t}</text>`;
+    body+=`<text x="${cx}" y="${cy+16}" text-anchor="middle" class="dvt">MATING STARWHEEL PCD ${pcd} · BOTTLE ⌀${bd} (ghost)</text>`;
+    title+=' — PLAN VIEW · h = '+P.rail_height_mm+' mm · contact @ '+P.contact_height_mm+' mm';
+  }
+  const res=validateDesign(designFromState());
+  const tb=`<rect x="6" y="${H-46}" width="${W-12}" height="40" fill="#0e1120" stroke="#45506e" stroke-width="0.6"/>
+    <text x="12" y="${H-32}" class="dvl">${escHtml(title)}</text>
+    <text x="12" y="${H-20}" class="dvt">MATERIAL ${escHtml(C.material_id)} · MACHINE ${escHtml(C.machine_id)} · ${C.target_speed_cpm} CPM · STAGE 5: ${res.verdict.toUpperCase()}</text>
+    <text x="12" y="${H-9}" class="dvt">MORRISON CHANGE-PART PIPELINE · CUSTOMER VIEW (dimensions only — tolerances &amp; cost withheld)</text>`;
+  dv.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${defs}${body}${tb}</svg>`;
+}
+
+function loop(){requestAnimationFrame(loop);if(spinning&&wg)wg.rotation.y+=0.008;controls.update();renderer.render(scene,camera)}
+function tSpin(){
+  if(!glReady)return;
+  spinning=!spinning;
+  const b=document.getElementById('bspin');
+  b.textContent=spinning?'⏸ Pause':'▶ Spin';
+  b.classList.toggle('active',spinning);
+  document.getElementById('spin-lbl').textContent=spinning?'Rotating…':'';
+}
+function tWire(){
+  if(!glReady)return;
+  wframe=!wframe;
+  const b=document.getElementById('bwire');
+  b.textContent=wframe?'□ Wireframe':'◼ Solid';
+  b.classList.toggle('active',!wframe);
+  bldW();
+}
+function rCam(){if(!glReady)return;fitCamera(lastExtent);}
+function onRz(){
+  if(!glReady)return;
+  const c=document.getElementById('ccc');if(!c)return;
+  const w=c.clientWidth,h=c.clientHeight;
+  camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);
+}
+
+/* ============================================================
+   DEMO PIPELINE — chains the real Ollama runs, stage by stage
+   ============================================================ */
+const ORD=[1,'1b',2,3,4,5,6,7,8];
+const LIVE_RUNNERS={1:runStage1,2:runStage2,3:runStage3,4:runStage4,7:runStage7};
+let demoRunning=false;
+
+async function runDemo(){
+  if(demoRunning)return;
+  demoRunning=true;
+  const btn=document.getElementById('demo-btn');
+  const origLabel=btn?btn.innerHTML:'';
+  resetPipeline();
+  await refreshOllamaStatus();
+  try{
+    for(let i=0;i<ORD.length;i++){
+      const id=ORD[i];
+      if(btn)btn.innerHTML=`<span class="ospin" style="border-top-color:#fff"></span> Running Stage ${id} (${i+1}/${ORD.length})…`;
+      const dot=document.getElementById('ss-'+id);
+      if(dot)dot.className='sstat st-run';
+      sel(id);
+      await new Promise(r=>setTimeout(r,250));
+      if(LIVE_RUNNERS[id]){
+        try{ await LIVE_RUNNERS[id](); }
+        catch(err){ console.error('Auto-demo stage '+id+' failed:',err); }
+        if(dot)dot.className='sstat st-done';
+      }else if(id==='1b'){
+        if(dot)dot.className='sstat st-done';
+      }else if(id===5||id===6){
+        await new Promise(r=>setTimeout(r,350));
+        if(dot)dot.className='sstat st-none';
+      }else{
+        await new Promise(r=>setTimeout(r,350));
+        if(dot)dot.className='sstat st-done';
+      }
+    }
+  }finally{
+    demoRunning=false;
+    if(btn)btn.innerHTML=origLabel;
+  }
+}
+function resetPipeline(){ORD.forEach(id=>{const d=document.getElementById('ss-'+id);if(d)d.className='sstat '+(id===5||id===6?'st-none':'st-rdy');});}
+function tog(e,id){e.stopPropagation();const p=document.getElementById('op-'+id);if(p)p.classList.toggle('open');}
+
+/* ============================================================
+   OLLAMA STAGE RUN HANDLERS
+   ============================================================ */
+const STAGE1_SYSTEM=`You are a precise engineering spec extractor for packaging-machine CHANGE PARTS (the parts swapped on a container format changeover).
+Step 1 - classify part_type as exactly one of: "starwheel" (rotary pocket wheel), "feed_screw" (infeed timing screw / worm), "guide_rail" (curved outer rail), or "unknown".
+Step 2 - extract ONLY values explicitly stated in the email into this exact JSON (every key present; anything not stated -> null):
+{"part_type":string,
+ "machine_id":string|null,"target_speed_cpm":number|null,"material_id":string|null,"bottle_diameter_mm":number|null,"bottle_height_mm":number|null,"ovality_mm":number|null,
+ "pocket_count":number|null,"pcd_mm":number|null,"wheel_thickness_mm":number|null,"shape":string|null,
+ "pitch_mm":number|null,"outer_diameter_mm":number|null,"root_diameter_mm":number|null,"length_mm":number|null,"starts":number|null,"flight_thickness_mm":number|null,"handedness":"RH"|"LH"|null,
+ "rail_radius_mm":number|null,"arc_angle_deg":number|null,"rail_height_mm":number|null,"thickness_mm":number|null,"contact_height_mm":number|null,"mating_pcd_mm":number|null,
+ "unresolved_questions":string[]}
+CRITICAL RULES: never guess, infer or "propose" a number - if the customer says to choose a value for them, leave it null and add it to unresolved_questions. Fields that belong to other part types stay null. Material names must be copied as written (e.g. "UHMW-PE", "POM"). Output ONLY the JSON object, no other text.`;
+
+function loadSampleEmail(k){
+  if(!SAMPLE_EMAILS[k])return;
+  const ta=document.getElementById('o1-input'); if(!ta)return;
+  ta.value=SAMPLE_EMAILS[k].text; STAGE_INPUT_CACHE['o1-input']=ta.value;
+}
+
+/* Every non-null number the model returned should literally appear in the email. */
+function groundingFlags(parsed,email){
+  const flagged=[];
+  for(const [k,v] of Object.entries(parsed)){
+    if(typeof v!=='number'||k==='part_type')continue;
+    const s=String(v).replace(/\.0+$/,'');
+    const re=new RegExp('(^|[^0-9.])'+s.replace('.','\\.')+'([^0-9]|$)');
+    if(!re.test(email))flagged.push(k+'='+v);
+  }
+  return flagged;
+}
+
+async function runStage1(){
+  const modelEl=document.getElementById('o1-model');
+  const model=modelEl.value.trim();
+  const email=document.getElementById('o1-input').value;
+  const res=await runOllamaStage({model,outId:'o1-out',btnId:'o1-btn',btnLabel:'▶ Run with Ollama',
+    callFn:()=>ollamaChat({model,system:STAGE1_SYSTEM,user:email,json:true})});
+  if(!res)return;
+  let parsed=null; try{parsed=JSON.parse(res.text);}catch(e){}
+  let note='';
+  if(parsed){
+    const T=PART_TYPES[parsed.part_type];
+    note+=T?`✓ Part type: ${T.label}\n`:`⚠ Part type "${parsed.part_type}" is not supported (starwheel / feed_screw / guide_rail) — downstream stages will keep the current viewer part.\n`;
+    const flagged=groundingFlags(parsed,email);
+    note+=flagged.length
+      ?`⚠ Null-discipline check: ${flagged.join(', ')} do not appear anywhere in the email — likely guessed/hallucinated.\n`
+      :`✓ Null-discipline check: every extracted number appears verbatim in the email; unstated fields were left null.\n`;
+    PIPELINE_STATE.spec=parsed;
+    PIPELINE_STATE.chosenBranch=null;
+    if(T){applySpecToCad(parsed);note+=`🔗 3D viewer / 2D drawing switched to ${T.label} and updated from this spec.\n`;}
+    const q=specSummaryText(parsed);
+    if(q){STAGE_INPUT_CACHE['o2-input']=q;note+=`🔗 Stage 2's query auto-filled: "${q}"\n`;}
+    PIPELINE_STATE.precedents=null;
+    STAGE_INPUT_CACHE['o3-input']=stage3ContextText(parsed,null);
+    delete STAGE_INPUT_CACHE['o4-input']; delete STAGE_INPUT_CACHE['o7-base'];
+    note+=`🔗 Stage 3's context reset to this spec + the ${T?T.label.toLowerCase():''} precedent library; Stage 4/7 will follow Stage 3's chosen branch.\n`;
+    note+='\n';
+  }
+  oShowResult('o1-out', note+tryPrettyJSON(res.text));
+}
+
+async function runStage1b(){
+  const fileInput=document.getElementById('o1b-file');
+  const file=fileInput.files&&fileInput.files[0];
+  if(!file){ oShowError('o1b-out','No image selected','Choose a drawing or bottle photo first.',''); return; }
+  const model=document.getElementById('o1b-model').value.trim();
+  const b64=await new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result).split(',').pop());
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+  const res=await runOllamaStage({model,outId:'o1b-out',btnId:'o1b-btn',btnLabel:'▶ Run with Ollama',
+    callFn:()=>ollamaChat({model,system:STAGE1_SYSTEM,user:'Extract the starwheel spec from this image as JSON, following the schema and null-discipline rule exactly.',images:[b64],json:true})});
+  if(!res)return;
+  oShowResult('o1b-out', tryPrettyJSON(res.text));
+}
+
+const PRECEDENTS=[
+  {id:'SW-10882',part_type:'starwheel',text:'16-pocket starwheel, PCD 620mm, UHMW-PE pockets, Morrison CAP-16, bottle diameter 54mm, ran clean at 380 CPM.',outcome:'clean'},
+  {id:'SW-10884',part_type:'starwheel',text:'16-pocket starwheel, PCD 620mm, UHMW-PE pockets, Morrison CAP-16, tight 0.15mm effective clearance, bottle bound and jammed the line.',outcome:'jammed'},
+  {id:'SW-11020',part_type:'starwheel',text:'24-pocket starwheel, PCD 900mm, POM pockets, Morrison CAP-24, high speed 700 CPM, ran clean.',outcome:'clean'},
+  {id:'FS-20417',part_type:'feed_screw',text:'2-start feed screw, pitch 80mm, OD 140mm, root 90mm, 480mm long, 10mm flights, UHMW-PE, Morrison CAP-16, 66mm PET bottle, ran clean at 380 CPM (190 rpm).',outcome:'clean'},
+  {id:'FS-20455',part_type:'feed_screw',text:'Single-start feed screw, pitch 72mm, OD 140mm, 480mm long, UHMW-PE, Morrison CAP-16, 66mm PET bottle; 380 rpm overran the 350 rpm drive limit and bottles jammed at the screw discharge.',outcome:'jammed'},
+  {id:'FS-20901',part_type:'feed_screw',text:'3-start feed screw, pitch 96mm, OD 200mm, root 130mm, 720mm long, POM, Morrison CAP-24, 68mm HDPE bottle, ran clean at 700 CPM.',outcome:'clean'},
+  {id:'GR-30112',part_type:'guide_rail',text:'Outer guide rail R340mm inner radius, 120 degree arc, 25mm high, 12mm thick, UHMW-PE, CAP-16 discharge on PCD 620mm, 54mm PET bottle, contact 95mm, ran clean at 380 CPM.',outcome:'clean'},
+  {id:'GR-30150',part_type:'guide_rail',text:'Outer guide rail R346mm inner radius, 120 degree arc, UHMW-PE, CAP-16 on PCD 620mm, 54mm PET bottle; 9mm running gap let bottles tip in the pocket and jam.',outcome:'jammed'},
+  {id:'GR-30388',part_type:'guide_rail',text:'Outer guide rail R492mm inner radius, 90 degree arc, 30mm high, 12mm thick, POM, CAP-24 on PCD 900mm, 68mm HDPE bottle, ran clean at 700 CPM.',outcome:'clean'}
+];
+
+async function runStage2(){
+  const model=document.getElementById('o2-model').value.trim();
+  const query=document.getElementById('o2-input').value;
+  oSetBusy('o2-btn',true);
+  const outEl=document.getElementById('o2-out'); if(outEl)outEl.innerHTML='';
+  try{
+    const type=currentType();
+    let pool=PRECEDENTS.filter(p=>p.part_type===type);
+    if(pool.length<2)pool=PRECEDENTS;
+    const qv=await ollamaEmbed({model,text:query});
+    const rows=[];
+    for(const p of pool){
+      const pv=await ollamaEmbed({model,text:p.text});
+      const sim=cosineSim(qv.embedding,pv.embedding);
+      const weight=p.outcome==='clean'?1.0:0.3;
+      rows.push({...p,sim,weight,score:sim*weight});
+    }
+    rows.sort((a,b)=>b.score-a.score);
+    const byRawSim=[...rows].sort((a,b)=>b.sim-a.sim);
+    const flip=byRawSim[0].id!==rows[0].id;
+    oSetBusy('o2-btn',false,'▶ Compute embeddings + rank');
+    let out=`Query: "${query}"\nLibrary: ${pool.length} ${PART_TYPES[type]?PART_TYPES[type].label.toLowerCase():''} precedents\n\n`;
+    if(flip) out+=`✓ Outcome-weighting changed the #1 result: "${byRawSim[0].id}" had the highest raw similarity, but jammed in service, so it was outranked by a lower-similarity but clean precedent.\n\n`;
+    else out+=`(Raw similarity and outcome-weighted ranking agree on #1 here — edit the query toward the jammed precedent's wording to see the reranking kick in.)\n\n`;
+    rows.forEach((r,i)=>{
+      out+=`#${i+1}  ${r.id}  [${r.outcome.toUpperCase()}]\n`;
+      out+=`     similarity_raw=${r.sim.toFixed(4)}  outcome_weight=${r.weight}  final_score=${r.score.toFixed(4)}\n`;
+      out+=`     ${r.text}\n\n`;
+    });
+    PIPELINE_STATE.precedents=rows;
+    STAGE_INPUT_CACHE['o3-input']=stage3ContextText(PIPELINE_STATE.spec,rows);
+    out+=`🔗 Stage 3's spec+precedents context has been auto-filled from this ranking.\n`;
+    oShowResult('o2-out',out);
+  }catch(err){
+    oSetBusy('o2-btn',false,'▶ Compute embeddings + rank');
+    let{title,detail,hint}=connErrorHint(err);
+    if(err&&err.notFound){title='Model not found';hint='Pull it first: ollama pull '+model;}
+    oShowError('o2-out',title,detail,hint);
+  }
+}
+
+const KNOWN_PRECEDENT_IDS=PRECEDENTS.map(p=>p.id);
+
+async function runStage3(){
+  const model=document.getElementById('o3-model').value.trim();
+  const context=document.getElementById('o3-input').value;
+  const type=currentType(), T=PART_TYPES[type];
+  const m=CAD_STATE.common.machine_id, mc=MAC[m]||{};
+  const system=`You are a mechanical design reasoning engine for packaging-machine change parts. Part type: ${type} (${T.label}).
+Work as a tree of thought: propose EXACTLY 3 candidate branches - "A" conservative, "B" balanced, "C" aggressive - then pick the optimized one.
+Machine constraints for ${m}: rated max ${mc.max??'?'} CPM${mc.screwRpm?`, infeed screw drive max ${mc.screwRpm} rpm and ${mc.torque} N·m`:''}. Effective clearance after container ovality must be > 0.20 mm.
+Output ONLY a JSON object {"branches":[...]} where each branch has: branch_id, ${T.branchFields.join(', ')}, rationale (must cite the precedent IDs given and their outcomes, and explain each numeric choice), risk_flags (array; flag anything close to a precedent that failed or a machine limit), recommended (true on exactly ONE branch - the optimized choice - and say why in its rationale). Numbers only, in mm / degrees; no units in values. material_id must be exactly one of: ${Object.keys(MAT).filter(k=>MAT[k].ok).join(', ')}. handedness must be "RH" or "LH".`;
+  const res=await runOllamaStage({model,outId:'o3-out',btnId:'o3-btn',btnLabel:'▶ Run with Ollama',
+    callFn:()=>ollamaChat({model,system,user:context,json:true})});
+  if(!res)return;
+  const grounded=KNOWN_PRECEDENT_IDS.some(id=>res.text.includes(id));
+  let note=grounded
+    ? '✓ Grounding check: rationale references a real precedent ID.\n'
+    : '⚠ Grounding check: no known precedent ID found in the output — rationale may be generic/ungrounded.\n';
+  const arr=extractBranches(res.text);
+  if(arr&&arr.length){
+    const{evald,pick}=chooseBranch(PIPELINE_STATE.spec,arr);
+    const branch={...pick.b,part_type:type};
+    PIPELINE_STATE.chosenBranch=branch;
+    STAGE_INPUT_CACHE['o4-input']=designParamsJSON(PIPELINE_STATE.spec,branch);
+    STAGE_INPUT_CACHE['o7-base']=refinementBaseJSON(PIPELINE_STATE.spec,branch);
+    applySpecToCad(pick.d);
+    note+='🌳 Tree-of-thought branches, each run through the real Stage 5 gate:\n';
+    evald.forEach(e=>{
+      note+=`   ${e.b.branch_id||'?'}: ${e.v.verdict.toUpperCase()}${e.b.recommended===true?' (model-recommended)':''}${e.v.reasons.length?' — '+e.v.reasons[0]:''}${e.b._material_dropped!==undefined?' [ignored invalid material_id '+JSON.stringify(e.b._material_dropped)+']':''}\n`;
+    });
+    const why=(pick.b.recommended===true&&pick.v.verdict==='accept')?'model-recommended and passes the gate'
+      :(pick.v.verdict==='accept'?'first branch that passes the gate':'no branch passes — carried forward for Stage 7 refinement');
+    note+=`🔗 Selected branch "${branch.branch_id||'?'}" (${why}) → Stage 4 & Stage 7 inputs filled, 3D viewer / 2D drawing updated.\n\n`;
+  }else{
+    note+='⚠ Could not parse candidate branches from the output — Stage 4/7 inputs left unchanged.\n\n';
+  }
+  oShowResult('o3-out', note+tryPrettyJSON(res.text));
+}
+
+async function runStage4(){
+  const model=document.getElementById('o4-model').value.trim();
+  const params=document.getElementById('o4-input').value;
+  let pj=null; try{pj=JSON.parse(params);}catch(e){}
+  const type=(pj&&PART_TYPES[pj.part_type])?pj.part_type:currentType(), T=PART_TYPES[type];
+  const system=`You are a CadQuery code generator for packaging-machine change parts. Part type: ${type} (${T.label}). Given the parameter JSON, output ONLY a complete, runnable CadQuery Python script (no markdown fences, no explanation). ${T.cadHint} Finish by exporting the final solid with .val().exportStep("output.step").`;
+  const res=await runOllamaStage({model,outId:'o4-out',btnId:'o4-btn',btnLabel:'▶ Run with Ollama',
+    callFn:()=>ollamaChat({model,system,user:params})});
+  if(!res)return;
+  const code=res.text.replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'');
+  const checks=T.cadChecks.map(([re,label])=>({label,pass:re.test(code)}));
+  const summary=checks.map(c=>(c.pass?'✓':'✗')+' '+c.label).join('\n');
+  oShowResult('o4-out',
+    'Layer-1-style static check for a '+T.label+' (string/regex only — NOT a real AST parse or OCCT geometry probe):\n'+summary+
+    '\n\n⚠ Layers 2 (execute) and 3 (OCCT geometry probing — e.g. pockets that only cut partway through, or a screw "flight" that never forms a helix) need a real local Python + CadQuery install — see stage4_executed.ipynb and stage5_engine.build_*_solid().\n\n'+
+    '--- Generated script ---\n\n'+code);
+}
+
+async function runStage7(){
+  const model=document.getElementById('o7-model').value.trim();
+  const baseText=document.getElementById('o7-base').value;
+  const instruction=document.getElementById('o7-instr').value;
+  let base;
+  try{ base=JSON.parse(baseText); }
+  catch(e){ oShowError('o7-out','Invalid base design JSON','Fix the JSON in the design box above before running.',''); return; }
+  const system=`You are a targeted design-refinement engine. Given a current design JSON and a plain-English edit instruction, output ONLY a JSON object: {"delta":{...only fields that change, with their NEW values...},"unchanged":[...every other key from the input, verbatim...]}. Never modify a field the instruction did not ask about — list it in unchanged instead. Recompute any dependent values correctly (e.g. if radius changes, clearance may need to change too).`;
+  const user=`Current design:\n${JSON.stringify(base,null,2)}\n\nEdit instruction: "${instruction}"`;
+  const res=await runOllamaStage({model,outId:'o7-out',btnId:'o7-btn',btnLabel:'▶ Run with Ollama',
+    callFn:()=>ollamaChat({model,system,user,json:true})});
+  if(!res)return;
+  let parsed=null; try{parsed=JSON.parse(res.text);}catch(e){}
+  if(!parsed||!parsed.delta){
+    oShowResult('o7-out','⚠ Could not parse a {delta, unchanged} object from the model output.\n\n'+res.text);
+    return;
+  }
+  const merged={...base,...parsed.delta};
+  const claimedUnchanged=parsed.unchanged||[];
+  const actuallyChanged=Object.keys(base).filter(k=>k in parsed.delta);
+  const drift=claimedUnchanged.filter(k=>k in base && JSON.stringify(base[k])!==JSON.stringify(merged[k]));
+  let out='--- Delta ---\n'+JSON.stringify(parsed.delta,null,2)+'\n\n';
+  out+=drift.length
+    ? `⚠ SILENT DRIFT DETECTED: field(s) [${drift.join(', ')}] were claimed "unchanged" but actually differ — automatic reject per the doc's rule.\n\n`
+    : '✓ No silent drift: every field claimed "unchanged" is actually unchanged.\n\n';
+  const revalidation=validateDesign(merged);
+  out+=`--- Live revalidation (real Stage 5 engine for ${PART_TYPES[revalidation.type].label}, not the LLM) ---\n`;
+  out+=`Verdict: ${revalidation.verdict.toUpperCase()}\n`;
+  out+=Object.entries(revalidation.computed).filter(([k,v])=>v!==null&&v!==undefined&&typeof v!=='object').map(([k,v])=>k+'='+v).join('  ')+'\n';
+  if(revalidation.reasons.length)out+=revalidation.reasons.map(r=>'  - '+r).join('\n')+'\n';
+  applySpecToCad(merged);
+  out+='🔗 3D viewer / 2D drawing updated to the refined design.\n';
+  out+='\n--- Merged design after edit ---\n'+JSON.stringify(merged,null,2);
+  oShowResult('o7-out',out);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded',()=>{
+  try{ renderCadControls(); }catch(err){ console.error('CAD controls init failed:',err); }
+  try{ sel(1); }catch(err){ console.error('Stage panel init failed:',err); }
+  try{ initGL(); }catch(err){ console.error('3D viewer init failed:',err); viewerFallback('⚠ 3D viewer failed to start. Geometry stats still update below.'); }
+  try{ if(!glReady)bldW(); }catch(err){ console.error('Geometry stats init failed:',err); }
+  refreshOllamaStatus();
+});
+</script>
+</body>
+</html>
