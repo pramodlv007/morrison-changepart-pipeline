@@ -1,0 +1,117 @@
+{
+  "version": "2.0",
+  "description": "Change-part registry consumed by pipeline_dashboard.html (via /api/registry when served by serve.py, otherwise the embedded copy) and by serve.py. Adding a part type here gives it a Stage 1 schema, Stage 3 branch fields, Stage 4 CadQuery strategy + static checks, sample customer requests and a precedent (RAG) library. Physics validators and 3D/2D geometry live in code — see docs/ADDING_A_PART.md.",
+  "container_defaults": {
+    "filled_mass_kg": 0.55,
+    "friction_coefficient": 0.25,
+    "accumulation_backpressure_n": 40,
+    "bottle_height_mm": 210
+  },
+  "part_types": {
+    "starwheel": {
+      "label": "Starwheel",
+      "summary_for_customer": "A rotating wheel with cut-out pockets that carries each container through the capping station.",
+      "defaults": {"pocket_count": 16, "pcd_mm": 620, "pocket_radius_mm": 32.8, "pocket_clearance_mm": 0.80, "wheel_thickness_mm": 20, "bore_diameter_mm": 50, "rim_mm": 8},
+      "common_defaults": {"bottle_diameter_mm": 54},
+      "sliders": [
+        {"k": "pcd_mm", "l": "PCD (mm)", "min": 480, "max": 960, "step": 10},
+        {"k": "pocket_count", "l": "Pockets (N)", "min": 8, "max": 24, "step": 2},
+        {"k": "pocket_radius_mm", "l": "Pocket r (mm)", "min": 15, "max": 70, "step": 0.5},
+        {"k": "wheel_thickness_mm", "l": "Thickness (mm)", "min": 10, "max": 40, "step": 1}
+      ],
+      "customer_dimensions": [
+        {"k": "pocket_count", "l": "Number of pockets", "u": ""},
+        {"k": "pcd_mm", "l": "Pocket circle diameter", "u": "mm"},
+        {"k": "pocket_radius_mm", "l": "Pocket radius", "u": "mm"},
+        {"k": "wheel_thickness_mm", "l": "Wheel thickness", "u": "mm"}
+      ],
+      "branch_fields": ["pocket_count", "pcd_mm", "pocket_radius_mm", "pocket_clearance_mm", "wheel_thickness_mm", "material_id"],
+      "cad_hint": "Build a disk of outer diameter OD = pcd_mm + 2*pocket_radius_mm + 2*rim_mm and thickness wheel_thickness_mm, cut a centre bore of bore_diameter_mm, then cut pocket_count circular pockets of radius pocket_radius_mm FULLY THROUGH the disk (cutThruAll) centred on the PCD bolt circle.",
+      "cad_checks": [
+        {"pattern": "import\\s+cadquery", "flags": "i", "label": "imports cadquery"},
+        {"pattern": "\\bfor\\b.*\\brange\\b", "flags": "", "label": "has a pocket loop (for/range)"},
+        {"pattern": "cutThruAll", "flags": "", "label": "cuts pockets through the disk (cutThruAll)"},
+        {"pattern": "exportStep", "flags": "i", "label": "exports a STEP file"}
+      ],
+      "sample_emails": {
+        "starwheel_cap16": {"label": "Starwheel — CAP-16, 16 pockets (reference case)", "text": "From: j.hall@brewco.com  Subject: Starwheel quote request\n\nHi, we need a replacement starwheel for our Morrison CAP-16 capper.\n16 pockets, PCD 620mm, bottle diameter 54mm. Target speed 380 CPM.\nMaterial should be UHMW-PE for food contact. Thickness 20mm.\n\nWe don't have ovality data for this bottle -- will send later."},
+        "starwheel_cap24": {"label": "Starwheel — CAP-24 high-speed line, POM", "text": "From: r.delgado@sparklingwave-bev.com  Subject: Need a starwheel for our high-speed line\n\nHey team,\n\nOur CAP-24 turret needs a new starwheel -- the old one is worn out and\nwe're seeing early wear on the pocket edges.\n\nSpecs: 24 pockets, PCD 900mm, running our round HDPE bottles (thick wall).\nBottle diameter is about 68mm. We push this line at 700 CPM during peak\nshifts. Go with POM this time instead of UHMW-PE -- our maintenance lead\nwants to try it for the extra stiffness.\n\nDidn't get a chance to measure thickness on the old part, someone will\nhave to pull the drawing. Let me know what else you need.\n\nThanks,\nRick"}
+      }
+    },
+    "feed_screw": {
+      "label": "Feed Screw (Timing Screw)",
+      "summary_for_customer": "A rotating screw at the machine infeed whose spiral flight spaces the containers evenly and hands them into the starwheel one at a time.",
+      "defaults": {"pitch_mm": 80, "outer_diameter_mm": 140, "root_diameter_mm": 90, "length_mm": 480, "starts": 2, "flight_thickness_mm": 10, "handedness": "RH"},
+      "common_defaults": {"bottle_diameter_mm": 66},
+      "sliders": [
+        {"k": "pitch_mm", "l": "Pitch (mm)", "min": 40, "max": 160, "step": 2},
+        {"k": "outer_diameter_mm", "l": "OD (mm)", "min": 80, "max": 260, "step": 5},
+        {"k": "root_diameter_mm", "l": "Root ⌀ (mm)", "min": 40, "max": 200, "step": 5},
+        {"k": "length_mm", "l": "Length (mm)", "min": 200, "max": 900, "step": 10},
+        {"k": "flight_thickness_mm", "l": "Flight t (mm)", "min": 4, "max": 24, "step": 1},
+        {"k": "starts", "l": "Starts", "min": 1, "max": 3, "step": 1}
+      ],
+      "customer_dimensions": [
+        {"k": "length_mm", "l": "Screw length", "u": "mm"},
+        {"k": "outer_diameter_mm", "l": "Outside diameter", "u": "mm"},
+        {"k": "pitch_mm", "l": "Pitch (container spacing)", "u": "mm"},
+        {"k": "starts", "l": "Number of flights", "u": ""},
+        {"k": "handedness", "l": "Rotation", "u": ""}
+      ],
+      "branch_fields": ["pitch_mm", "outer_diameter_mm", "root_diameter_mm", "length_mm", "starts", "flight_thickness_mm", "handedness", "material_id"],
+      "cad_hint": "Build a root cylinder of root_diameter_mm x length_mm. Build ONE flight by sweeping a rectangular profile (radial width (outer_diameter_mm-root_diameter_mm)/2 + 1, thickness flight_thickness_mm, sketched on the XZ plane centred at radius root/2 + (OD-root)/4) along cq.Wire.makeHelix(pitch=pitch_mm*starts, height=length_mm, radius=root_diameter_mm/2) using .sweep(path, isFrenet=True); for starts > 1 union rotated copies of that flight (360/starts degrees apart about Z). Do NOT use twistExtrude - it only rotates the end face and cannot form a multi-turn helix.",
+      "cad_checks": [
+        {"pattern": "import\\s+cadquery", "flags": "i", "label": "imports cadquery"},
+        {"pattern": "makeHelix", "flags": "", "label": "uses a true helix path (makeHelix)"},
+        {"pattern": "sweep\\(", "flags": "", "label": "sweeps the flight profile"},
+        {"pattern": "exportStep", "flags": "i", "label": "exports a STEP file"}
+      ],
+      "sample_emails": {
+        "feed_screw": {"label": "Feed screw — CAP-16 infeed timing screw", "text": "From: m.okafor@northridgebottling.com  Subject: Infeed timing screw for line 3 filler\n\nHi -- we need a new infeed feed screw for the Morrison CAP-16 on line 3.\nBottle is a 66mm diameter round PET, and we run the line at 380 CPM.\nThe screw needs to be about 480mm long, right-hand, in UHMW-PE.\nFor pitch and outside diameter use whatever suits the bottle -- the old\ndrawing is lost, so please propose them and tell us why.\n\nThanks, Maya"},
+        "feed_screw_glass": {"label": "Feed screw — CAP-16, 750 ml glass, POM, left-hand", "text": "From: t.brennan@ridgelinespirits.ie  Subject: Timing screw for the new 750 ml line\n\nHi,\n\nWe're adding a Morrison CAP-16 filler/capper on the 750 ml line and need\nan infeed timing screw for it. The bottle is round glass, 84 mm diameter,\nabout 300 mm tall. We want to run it at 420 CPM.\n\nThe screw has to fit a 600 mm long infeed section. Please make it in POM --\nour glass bottles chew up UHMW too quickly. Left-hand rotation to match\nthe conveyor.\n\nWe'd like your recommendation on pitch, diameter and number of starts;\nwe don't have a drawing for this one.\n\nCheers,\nTom"}
+      }
+    },
+    "guide_rail": {
+      "label": "Guide Rail",
+      "summary_for_customer": "A curved rail that runs around part of the starwheel and keeps each container seated in its pocket while it is carried round.",
+      "defaults": {"rail_radius_mm": 340, "arc_angle_deg": 120, "rail_height_mm": 25, "thickness_mm": 12, "contact_height_mm": 95, "mating_pcd_mm": 620},
+      "common_defaults": {"bottle_diameter_mm": 54, "bottle_height_mm": 210},
+      "sliders": [
+        {"k": "rail_radius_mm", "l": "Inner R (mm)", "min": 200, "max": 700, "step": 1},
+        {"k": "arc_angle_deg", "l": "Arc (°)", "min": 10, "max": 220, "step": 5},
+        {"k": "rail_height_mm", "l": "Height (mm)", "min": 5, "max": 60, "step": 1},
+        {"k": "thickness_mm", "l": "Thickness (mm)", "min": 3, "max": 30, "step": 1}
+      ],
+      "customer_dimensions": [
+        {"k": "rail_radius_mm", "l": "Inner radius", "u": "mm"},
+        {"k": "arc_angle_deg", "l": "Wrap angle", "u": "°"},
+        {"k": "rail_height_mm", "l": "Rail height", "u": "mm"},
+        {"k": "thickness_mm", "l": "Rail thickness", "u": "mm"},
+        {"k": "contact_height_mm", "l": "Contact height above conveyor", "u": "mm"}
+      ],
+      "branch_fields": ["rail_radius_mm", "arc_angle_deg", "rail_height_mm", "thickness_mm", "contact_height_mm", "material_id"],
+      "cad_hint": "Sketch an annular sector on the XY plane: inner arc of radius rail_radius_mm and outer arc of rail_radius_mm + thickness_mm spanning arc_angle_deg (moveTo / threePointArc / lineTo / threePointArc / close), then extrude by rail_height_mm.",
+      "cad_checks": [
+        {"pattern": "import\\s+cadquery", "flags": "i", "label": "imports cadquery"},
+        {"pattern": "threePointArc|radiusArc", "flags": "i", "label": "sketches the rail arcs"},
+        {"pattern": "extrude\\(", "flags": "", "label": "extrudes the rail section"},
+        {"pattern": "exportStep", "flags": "i", "label": "exports a STEP file"}
+      ],
+      "sample_emails": {
+        "guide_rail": {"label": "Guide rail — CAP-16 discharge outer rail", "text": "From: s.lindqvist@fjordwater.se  Subject: Replacement outer guide rail, capper discharge\n\nHello,\nThe outer guide rail on our CAP-16 discharge starwheel (PCD 620mm) is cracked.\nOur bottle is 54mm diameter, 210mm tall, round PET, and the line runs 380 CPM.\nThe rail should wrap about 120 degrees around the wheel, 25mm high and 12mm\nthick, in UHMW-PE. Contact height about 95mm above the conveyor -- that is on\nthe label panel of the bottle.\nRegards, Sara"},
+        "guide_rail_cap24": {"label": "Guide rail — CAP-24 discharge, HDPE, 150° wrap", "text": "From: k.nakamura@hokusei-drinks.jp  Subject: Outer guide rail, CAP-24 discharge side\n\nHello,\n\nWe need a replacement outer guide rail for the discharge starwheel on our\nMorrison CAP-24. The starwheel PCD is 900 mm. Our container is a 68 mm\nround HDPE bottle, 245 mm tall, and the line runs at 700 CPM.\n\nThe old rail wrapped 150 degrees around the wheel and was 30 mm high,\n12 mm thick, in POM. Contact height was 110 mm above the conveyor.\n\nPlease confirm the rail radius and let us know if 150 degrees is still OK.\n\nBest regards,\nKenji Nakamura"}
+      }
+    }
+  },
+  "precedents": [
+    {"id": "SW-10882", "part_type": "starwheel", "text": "16-pocket starwheel, PCD 620mm, UHMW-PE pockets, Morrison CAP-16, bottle diameter 54mm, ran clean at 380 CPM.", "outcome": "clean"},
+    {"id": "SW-10884", "part_type": "starwheel", "text": "16-pocket starwheel, PCD 620mm, UHMW-PE pockets, Morrison CAP-16, tight 0.15mm effective clearance, bottle bound and jammed the line.", "outcome": "jammed"},
+    {"id": "SW-11020", "part_type": "starwheel", "text": "24-pocket starwheel, PCD 900mm, POM pockets, Morrison CAP-24, high speed 700 CPM, ran clean.", "outcome": "clean"},
+    {"id": "FS-20417", "part_type": "feed_screw", "text": "2-start feed screw, pitch 80mm, OD 140mm, root 90mm, 480mm long, 10mm flights, UHMW-PE, Morrison CAP-16, 66mm PET bottle, ran clean at 380 CPM (190 rpm).", "outcome": "clean"},
+    {"id": "FS-20455", "part_type": "feed_screw", "text": "Single-start feed screw, pitch 72mm, OD 140mm, 480mm long, UHMW-PE, Morrison CAP-16, 66mm PET bottle; 380 rpm overran the 350 rpm drive limit and bottles jammed at the screw discharge.", "outcome": "jammed"},
+    {"id": "FS-20901", "part_type": "feed_screw", "text": "3-start feed screw, pitch 96mm, OD 200mm, root 130mm, 720mm long, POM, Morrison CAP-24, 68mm HDPE bottle, ran clean at 700 CPM.", "outcome": "clean"},
+    {"id": "GR-30112", "part_type": "guide_rail", "text": "Outer guide rail R340mm inner radius, 120 degree arc, 25mm high, 12mm thick, UHMW-PE, CAP-16 discharge on PCD 620mm, 54mm PET bottle, contact 95mm, ran clean at 380 CPM.", "outcome": "clean"},
+    {"id": "GR-30150", "part_type": "guide_rail", "text": "Outer guide rail R346mm inner radius, 120 degree arc, UHMW-PE, CAP-16 on PCD 620mm, 54mm PET bottle; 9mm running gap let bottles tip in the pocket and jam.", "outcome": "jammed"},
+    {"id": "GR-30388", "part_type": "guide_rail", "text": "Outer guide rail R492mm inner radius, 90 degree arc, 30mm high, 12mm thick, POM, CAP-24 on PCD 900mm, 68mm HDPE bottle, ran clean at 700 CPM.", "outcome": "clean"}
+  ]
+}

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Morrison Starwheel CAD Pipeline &mdash; Interactive Dashboard</title>
   <meta name="description" content="End-to-end interactive dashboard for the Morrison automated starwheel CAD engineering pipeline. 8 stages, live 3D viewer, real-time Stage 5 validation, Ollama local model guide." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f6eff'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2300d4b4' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='7' r='2.6' fill='%230a0f1c'/%3E%3Ccircle cx='16' cy='25' r='2.6' fill='%230a0f1c'/%3E%3Ccircle cx='7' cy='16' r='2.6' fill='%230a0f1c'/%3E%3Ccircle cx='25' cy='16' r='2.6' fill='%230a0f1c'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -179,6 +180,20 @@
     #dv svg{width:100%;height:100%;font-family:"JetBrains Mono",monospace}
     .dvl{fill:#eef2ff;font-size:9px}
     .dvt{fill:#8b9cbf;font-size:8px}
+    /* RUN TRACE + BACKEND BADGE (developer UX) */
+    .trace{background:var(--card);border:1px solid var(--brd);border-radius:var(--r2);padding:6px 8px;font-family:"JetBrains Mono",monospace;font-size:9px}
+    .tr-empty{color:var(--t3);padding:3px 2px}
+    .tr-row{display:grid;grid-template-columns:24px 1fr 38px 56px 12px;gap:4px;align-items:center;padding:3px 2px;border-bottom:1px solid var(--brd);color:var(--t2)}
+    .tr-row:last-of-type{border-bottom:none}
+    .tr-st{color:var(--acc);font-weight:700}.tr-m{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1)}.tr-t{text-align:right;color:var(--gold)}.tr-k{text-align:right;color:var(--t3)}.tr-ok{color:var(--grn)}
+    .tr-bad .tr-ok{color:var(--red)}
+    .tr-sum{padding:5px 2px 1px;color:var(--t3);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .tr-btn{font-size:8px;padding:1px 6px;border-radius:4px;border:1px solid var(--brd);background:var(--inp);color:var(--t2);cursor:pointer}
+    .tr-btn:hover{border-color:var(--acc);color:var(--t1)}
+    .bkbadge{margin-top:8px;font-size:9px;color:var(--t3);padding:5px 8px;border:1px dashed var(--brd);border-radius:var(--r1);line-height:1.4}
+    .bkbadge.ok{color:var(--teal);border-style:solid;border-color:rgba(0,212,180,.3)}
+    .pstate summary{font-size:10px;color:var(--t3);cursor:pointer;margin-top:8px;user-select:none}
+    .pstate pre{font-family:"JetBrains Mono",monospace;font-size:8px;color:var(--t2);background:var(--card);border:1px solid var(--brd);border-radius:var(--r1);padding:6px;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:4px}
   </style>
 </head>
 <body>
@@ -197,7 +212,9 @@
       <span id="ollama-label">Checking Ollama&hellip;</span>
     </div>
     <div class="vsep" style="margin:0 7px"></div>
-    <button class="btn btn-p" id="demo-btn" onclick="runDemo()">&#9654; Run Demo Pipeline</button>
+    <span id="loop-badge" class="hdr-sub" style="color:var(--gold);font-weight:700"></span>
+    <button class="btn btn-g" onclick="openCustomerView()" title="Open the plain-language customer page for the current design">&#128100; Customer view</button>
+    <button class="btn btn-p" id="demo-btn" style="margin-left:4px" onclick="runDemo()">&#9654; Run Demo Pipeline</button>
     <button class="btn btn-g" style="margin-left:4px" onclick="resetPipeline()">&#8635; Reset</button>
   </header>
 
@@ -334,10 +351,14 @@ ollama run llama3.1:8b</div>
         <div class="ometa"><b>Why not LLM:</b> Tabular regression &mdash; GBM wins.<br/><b>Top drivers:</b> eff_clearance, speed_util, wear_class</div>
       </div>
     </div>
+    <div class="slbl" style="margin-top:10px">Run trace</div>
+    <div id="trace" class="trace"><div class="tr-empty">No model calls yet.</div></div>
+    <details class="pstate"><summary>Pipeline state (developer)</summary><pre id="pstate">{}</pre></details>
+    <div id="backend-badge" class="bkbadge" title="">⚙ checking backend…</div>
   </aside>
 
   <!-- CENTER PANEL -->
-  <main id="ctr"><div id="sc-content" class="fade"></div></main>
+  <main id="ctr"><div id="inbox" style="display:none"></div><div id="sc-content" class="fade"></div></main>
 
   <!-- RIGHT: 3D VIEWER -->
   <aside id="rp">
@@ -360,6 +381,7 @@ ollama run llama3.1:8b</div>
         <button class="vbtn" id="bspin" onclick="tSpin()">&#9654; Spin</button>
         <button class="vbtn active" id="bwire" onclick="tWire()">&#9724; Solid</button>
         <button class="vbtn" onclick="rCam()">&#8857; Reset</button>
+        <button class="vbtn" id="bstep" onclick="downloadSTEP()" title="CAD-ready STEP file built by the Python backend from the validated parameters" disabled style="opacity:.5">&#11015; STEP</button>
       </div>
     </div>
   </aside>
@@ -388,7 +410,7 @@ const OV={
   'round_pet_water_bottle':0.60,'carbonated_soda_bottle':0.45,
   'thick_wall_hdpe_bottle':0.80,'standard_glass_bottle':0.30
 };
-const CONTAINER={massKg:0.55,mu:0.25,backpressureN:40,heightMm:210};
+let CONTAINER={massKg:0.55,mu:0.25,backpressureN:40,heightMm:210};
 const LIM={
   effClrMin:0.20,webMin:8,
   screw:{maxClr:6.0,minEngage:0.20,minBottles:3,minFlight:6.0,dyn:1.5,src:'Morrison Feed Screw Design Standard FS-DS-02'},
@@ -398,7 +420,9 @@ const LIM={
 /* ============================================================
    CHANGE-PART TYPES  (the pipeline is generic over these)
    ============================================================ */
-const PART_TYPES={
+/* Embedded fallback (used when the page is opened from disk). When served by serve.py,
+   parts/registry.json is fetched at load and replaces all of these via applyRegistry(). */
+let PART_TYPES={
   starwheel:{
     label:'Starwheel',
     defaults:{pocket_count:16,pcd_mm:620,pocket_radius_mm:32.8,pocket_clearance_mm:0.80,wheel_thickness_mm:20,bore_diameter_mm:50,rim_mm:8},
@@ -425,7 +449,7 @@ const PART_TYPES={
   }
 };
 
-const SAMPLE_EMAILS={
+let SAMPLE_EMAILS={
   starwheel_cap16:{label:'Starwheel \u2014 CAP-16, 16 pockets (reference case)',text:`From: j.hall@brewco.com  Subject: Starwheel quote request
 
 Hi, we need a replacement starwheel for our Morrison CAP-16 capper.
@@ -596,9 +620,20 @@ function validateGuideRail(p){
     computed:{gap:r2(gap),eg:r2(eg),band:[r1(band[0]),r1(band[1])],N,nArc,load:r2(load),allow,util:util!==null?r3(util):null,ws}};
 }
 
-/* Dispatch a schema-named design object (part_type + fields) to the right validator. */
+/* Dispatch a schema-named design object (part_type + fields) to the right validator.
+   A part type declared in the registry but with no physics yet must NOT borrow another
+   part's validator — it would report a confident verdict from meaningless numbers. */
+const HAS_VALIDATOR={starwheel:1,feed_screw:1,guide_rail:1};
+function unvalidatedResult(type){
+  const label=(PART_TYPES[type]&&PART_TYPES[type].label)||type;
+  const reason='No Stage 5 physics is implemented for "'+label+'" yet, so this design has NOT been checked. Add validate_'+type+'() to stage5_engine.py and its mirror in this page — see docs/ADDING_A_PART.md.';
+  return{type,verdict:'unvalidated',
+    checks:{'Stage 5 physics implemented':{pass:false,reason,cit:'docs/ADDING_A_PART.md'}},
+    reasons:[reason],cit:'',computed:{ws:0}};
+}
 function validateDesign(d){
   const type=PART_TYPES[d.part_type]?d.part_type:'starwheel';
+  if(!HAS_VALIDATOR[type])return unvalidatedResult(type);
   const ov=num(d.ovality_mm,0.60), spd=num(d.target_speed_cpm,380), mid=d.machine_id||'CAP-16', mat=d.material_id||'UHMW-PE', bd=num(d.bottle_diameter_mm,54);
   const massKg=num(d.filled_mass_kg,CONTAINER.massKg);
   if(type==='feed_screw')return validateFeedScrew({pitch:num(d.pitch_mm,80),od:num(d.outer_diameter_mm,140),root:num(d.root_diameter_mm,90),len:num(d.length_mm,480),starts:num(d.starts,1),ft:num(d.flight_thickness_mm,10),bd,ov,mid,mat,spd,massKg,mu:num(d.friction_coefficient,CONTAINER.mu),bp:num(d.accumulation_backpressure_n,CONTAINER.backpressureN)});
@@ -608,6 +643,7 @@ function validateDesign(d){
 
 function scoreTiles(res){
   const c=res.computed;
+  if(res.verdict==='unvalidated')return[{l:'Stage 5',v:'not implemented',u:'',ok:false,pct:0}];
   if(res.type==='feed_screw')return[
     {l:'Effective Clearance',v:c.ec,u:'mm',ok:c.ec>0.2&&c.clr<=6,pct:c.ec/3},
     {l:'Drive Torque',v:c.torque,u:'N·m'+(c.maxT?' / '+c.maxT:''),ok:c.maxT!==null&&c.torque<=c.maxT,pct:c.maxT?c.torque/c.maxT:0},
@@ -624,6 +660,7 @@ function scoreTiles(res){
 
 function formulasFor(res,d){
   const c=res.computed;
+  if(res.verdict==='unvalidated')return escHtml('No formulas yet for part type "'+res.type+'".\nStage 5 is the safety gate: until validate_'+res.type+'() exists in stage5_engine.py (and is mirrored here), this part cannot be validated.\nSee docs/ADDING_A_PART.md step 3.');
   if(res.type==='feed_screw')return `pocket_w = pitch − flight_t  =  ${d.pitch_mm} − ${d.flight_thickness_mm}  =  <b style="color:var(--grn)">${c.pocketW} mm</b>
 c_eff    = (pocket_w − bottle_⌀) − ovality/2  =  (${c.pocketW} − ${d.bottle_diameter_mm}) − ${d.ovality_mm}/2  =  <b style="color:var(--grn)">${c.ec} mm</b>  [floor: &gt; 0.20 mm, ceiling: ≤ 6.0 mm]
 engage   = (OD − root)/2 ÷ bottle_⌀  =  ${c.depth} / ${d.bottle_diameter_mm}  =  <b style="color:var(--grn)">${(c.engage*100).toFixed(0)}%</b>  [min 20%]
@@ -651,7 +688,7 @@ let OLLAMA_STATUS='checking';
 /* ---- Cross-stage chaining: what each stage produced, and every input box's
    current text (so edits survive re-render, and downstream stages default to
    upstream real output instead of a fixed hardcoded example). ---- */
-let PIPELINE_STATE={spec:null,precedents:null,chosenBranch:null};
+let PIPELINE_STATE={spec:null,precedents:null,chosenBranch:null,iteration:0,history:[],feedback:null,clarification:null};
 let STAGE_INPUT_CACHE={};
 
 function iv(id,fallback){
@@ -814,11 +851,16 @@ function oShowError(outId,title,detail,hint){
 function oShowResult(outId,text){
   const el=document.getElementById(outId);if(!el)return;
   el.innerHTML='';
+  const bar=document.createElement('div');bar.className='orow';bar.style.justifyContent='flex-end';bar.style.marginBottom='4px';
+  const b=document.createElement('button');b.className='tr-btn';b.textContent='copy output';
+  b.onclick=()=>{if(navigator.clipboard)navigator.clipboard.writeText(text);b.textContent='copied';setTimeout(()=>b.textContent='copy output',1200);};
+  bar.appendChild(b);
   const pre=document.createElement('div');
   pre.className='oresult';
   pre.textContent=text;
-  el.appendChild(pre);
+  el.appendChild(bar);el.appendChild(pre);
   oCacheSnapshot(outId);
+  renderState();
 }
 
 function oRestoreCache(id){
@@ -837,6 +879,7 @@ function connErrorHint(err){
 }
 
 async function runOllamaStage({model,outId,btnId,btnLabel,callFn}){
+  CURRENT_TRACE_STAGE=OUT_TO_STAGE[outId]||'';
   oSetBusy(btnId,true);
   const el=document.getElementById(outId);if(el)el.innerHTML='';
   try{
@@ -862,17 +905,22 @@ async function ollamaChat({model,system,user,images,json}){
   if(json)body.format='json';
   const ctrl=new AbortController();
   const timer=setTimeout(()=>ctrl.abort(),600000);
+  const t0=performance.now(), stage=CURRENT_TRACE_STAGE;
   try{
     const r=await fetch(OLLAMA_BASE+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
     clearTimeout(timer);
     const j=await r.json().catch(()=>null);
     if(!r.ok||!j||j.error){
       const errMsg=(j&&j.error)||('HTTP '+r.status);
+      traceRecord({stage,model,kind:'chat',ok:false,ms:performance.now()-t0,error:errMsg});
       throw Object.assign(new Error(errMsg),{isOllamaApiError:true,notFound:/not found/i.test(errMsg)});
     }
-    return{ok:true,text:(j.message&&j.message.content)||''};
+    const meta=metaFromOllama(j,performance.now()-t0);
+    traceRecord({stage,model,kind:'chat',ok:true,...meta});
+    return{ok:true,text:(j.message&&j.message.content)||'',meta};
   }catch(err){
     clearTimeout(timer);
+    if(!(err&&err.isOllamaApiError))traceRecord({stage,model,kind:'chat',ok:false,ms:performance.now()-t0,error:err&&err.message});
     throw err;
   }
 }
@@ -888,6 +936,7 @@ async function ollamaEmbed({model,text}){
       const errMsg=(j&&j.error)||('HTTP '+r.status);
       throw Object.assign(new Error(errMsg),{isOllamaApiError:true,notFound:/not found/i.test(errMsg)});
     }
+    traceRecord({stage:CURRENT_TRACE_STAGE,model,kind:'embed',ok:true,ms:0,promptTokens:0,evalTokens:j.embedding.length});
     return{ok:true,embedding:j.embedding};
   }catch(err){
     clearTimeout(timer);
@@ -904,6 +953,251 @@ function cosineSim(a,b){
 
 function tryPrettyJSON(text){
   try{return JSON.stringify(JSON.parse(text),null,2);}catch(e){return text;}
+}
+
+/* ============================================================
+   PART REGISTRY (parts/registry.json) + BACKEND (serve.py)
+   ============================================================ */
+let BACKEND={base:null,cadquery:false,registryVersion:null};
+let REGISTRY=null;
+
+function applyRegistry(reg){
+  if(!reg||!reg.part_types)return false;
+  const pt={}, common={}, samples={};
+  for(const [key,p] of Object.entries(reg.part_types)){
+    pt[key]={
+      label:p.label||key,
+      summary:p.summary_for_customer||'',
+      defaults:{...(p.defaults||{})},
+      sliders:p.sliders||[],
+      customerDims:p.customer_dimensions||[],
+      branchFields:p.branch_fields||[],
+      cadHint:p.cad_hint||'',
+      cadChecks:(p.cad_checks||[]).map(c=>[new RegExp(c.pattern,c.flags||''),c.label])
+    };
+    common[key]={...(p.common_defaults||{})};
+    for(const [sk,sv] of Object.entries(p.sample_emails||{}))samples[sk]=sv;
+  }
+  PART_TYPES=pt; PART_COMMON_DEFAULTS=common; SAMPLE_EMAILS=samples;
+  if(Array.isArray(reg.precedents)){PRECEDENTS=reg.precedents;KNOWN_PRECEDENT_IDS=PRECEDENTS.map(p=>p.id);}
+  if(reg.container_defaults){
+    const c=reg.container_defaults;
+    CONTAINER={massKg:num(c.filled_mass_kg,CONTAINER.massKg),mu:num(c.friction_coefficient,CONTAINER.mu),backpressureN:num(c.accumulation_backpressure_n,CONTAINER.backpressureN),heightMm:num(c.bottle_height_mm,CONTAINER.heightMm)};
+  }
+  REGISTRY=reg;
+  if(!PART_TYPES[CAD_STATE.type]){CAD_STATE.type=Object.keys(PART_TYPES)[0];CAD_STATE.params={...PART_TYPES[CAD_STATE.type].defaults};}
+  return true;
+}
+
+async function fetchJSON(url,ms){
+  const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),ms||2500);
+  try{const r=await fetch(url,{signal:ctrl.signal});clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();}
+  catch(e){clearTimeout(t);throw e;}
+}
+
+/* Served by serve.py -> same origin. Opened from disk -> try the default backend port (CORS is open). */
+async function loadRegistry(){
+  const candidates=location.protocol.startsWith('http')?[location.origin]:['http://localhost:8765'];
+  for(const base of candidates){
+    try{
+      const h=await fetchJSON(base+'/api/health',4000);
+      BACKEND={base,cadquery:!!h.cadquery,registryVersion:h.registry_version||null,overlays:h.overlays||[],errors:h.errors||[]};
+      const reg=await fetchJSON(base+'/api/registry',4000);
+      if(applyRegistry(reg))console.info('Registry v'+reg.version+' loaded from '+base+' ('+Object.keys(PART_TYPES).length+' part types)');
+      break;
+    }catch(e){/* no backend at this base — embedded fallback stays in force */}
+  }
+  updateBackendBadge();
+}
+function updateBackendBadge(){
+  const el=document.getElementById('backend-badge'); if(!el)return;
+  const errs=BACKEND.errors||[];
+  if(BACKEND.base){
+    const ov=(BACKEND.overlays||[]).length;
+    el.innerHTML='⚙ backend · registry v'+escHtml(BACKEND.registryVersion||'?')
+      +(ov?' +'+ov+' part file'+(ov>1?'s':''):'')+(BACKEND.cadquery?' · STEP export':'')
+      +(errs.length?'<br/><span style="color:var(--red)">⚠ '+escHtml(errs.length+' part file'+(errs.length>1?'s':'')+' skipped: '+errs.join('; '))+'</span>':'');
+  }else{
+    el.textContent='⚙ no backend (embedded registry) — run: python serve.py';
+  }
+  el.title=(BACKEND.base||'Start serve.py for the Python engine, registry file and STEP export')+(errs.length?'\n'+errs.join('\n'):'');
+  el.classList.toggle('ok',!!BACKEND.base&&!errs.length);
+  const bs=document.getElementById('bstep'); if(bs){const on=!!(BACKEND.base&&BACKEND.cadquery);bs.disabled=!on;bs.style.opacity=on?'1':'.5';}
+}
+
+/* ---- Backend integration: STEP export + Python engine cross-check ---- */
+async function downloadSTEP(){
+  const b=document.getElementById('bstep');
+  if(!BACKEND.base||!BACKEND.cadquery){alert('STEP export needs the Python backend with CadQuery installed.\nRun:  python serve.py');return;}
+  const d=designFromState();
+  if(b){b.disabled=true;b.textContent='⏳ STEP…';}
+  try{
+    const r=await fetch(BACKEND.base+'/api/step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({part_type:d.part_type,params:d})});
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status));}
+    const blob=await r.blob();
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=d.part_type+'.step';document.body.appendChild(a);a.click();a.remove();
+  }catch(e){alert('STEP export failed: '+e.message);}
+  if(b){b.disabled=false;b.textContent='⬇ STEP';}
+}
+async function pythonCrossCheck(){
+  const out=document.getElementById('pycheck'); if(!out)return;
+  if(!BACKEND.base){out.textContent='Backend not running — start it with: python serve.py';return;}
+  const d=designFromState(), js=validateDesign(d);
+  out.textContent='Asking the Python engine…';
+  try{
+    const r=await fetch(BACKEND.base+'/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({part_type:d.part_type,params:d,ovality_mm:d.ovality_mm})});
+    const j=await r.json(); if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
+    const same=j.verdict===js.verdict;
+    out.innerHTML=`<span class="${same?'gp':'gf'}">Python stage5_engine: ${escHtml(String(j.verdict).toUpperCase())} — ${same?'matches the browser engine':'MISMATCH vs browser '+js.verdict.toUpperCase()}</span><br/><span style="color:var(--t3)">${escHtml(Object.entries(j.computed||{}).filter(([k,v])=>typeof v!=='object').map(([k,v])=>k+'='+v).join('  '))}</span>`;
+  }catch(e){out.textContent='Cross-check failed: '+e.message;}
+}
+
+/* ---- Developer state inspector ---- */
+function renderState(){
+  const el=document.getElementById('pstate'); if(!el)return;
+  const s=PIPELINE_STATE.spec||{};
+  const compactSpec=Object.fromEntries(Object.entries(s).filter(([k,v])=>v!==null&&v!==undefined&&!(Array.isArray(v)&&!v.length)));
+  const b=PIPELINE_STATE.chosenBranch?Object.fromEntries(Object.entries(PIPELINE_STATE.chosenBranch).filter(([k])=>k!=='rationale')):null;
+  el.textContent=JSON.stringify({part:currentType(),loop:{iteration:PIPELINE_STATE.iteration,history:PIPELINE_STATE.history},spec:compactSpec,branch:b,backend:BACKEND.base||'none'},null,1);
+}
+
+/* ============================================================
+   FEEDBACK LOOP — Stage 5 REJECT -> Stage 3 redesign, or -> Stage 1 clarification
+   ============================================================ */
+const MAX_LOOP_ITER=3;
+/* Spec-level failures (non-compliant material, over the machine's rating, unknown machine) cannot be
+   designed around — they need the customer. Everything else is geometry the designer can change. */
+function classifyFailure(res){
+  const failing=Object.entries(res.checks).filter(([k,v])=>!v.pass);
+  if(res.verdict==='unvalidated')return{route:'none',failing};
+  const specLevel=failing.some(([k,v])=>/Food-Contact|Speed Within Machine Limit/.test(k)||/not in catalog|no screw-drive data|no torque rating/.test(v.reason||''));
+  return{route:specLevel?'stage1':'stage3',failing};
+}
+function feedbackPacket(res,design,iter){
+  const T=PART_TYPES[res.type]||{label:design.part_type};
+  const lines=Object.entries(res.checks).filter(([k,v])=>!v.pass).map(([k,v])=>`- ${k}: ${v.reason}${v.cit?' ['+v.cit+']':''}`);
+  const m=MAC[design.machine_id]||{};
+  const limits=[`effective clearance / running gap after container ovality must be > ${LIM.effClrMin} mm`,
+    m.max?`${design.machine_id} rated max ${m.max} CPM`:null,
+    m.screwRpm?`${design.machine_id} infeed screw drive max ${m.screwRpm} rpm and ${m.torque} N·m`:null,
+    res.type==='starwheel'?`web thickness between pockets >= ${LIM.webMin} mm`:null,
+    res.type==='feed_screw'?`pocket clearance <= ${LIM.screw.maxClr} mm, flight engagement >= ${LIM.screw.minEngage*100}% of bottle diameter, >= ${LIM.screw.minBottles} bottles engaged, flight >= ${LIM.screw.minFlight} mm`:null,
+    res.type==='guide_rail'?`running gap <= ${LIM.rail.maxGap} mm, arc ${LIM.rail.minArc}-${LIM.rail.maxArc} degrees, contact height 25-75% of bottle height`:null,
+    `approved food-contact materials: ${Object.keys(MAT).filter(k=>MAT[k].ok).join(', ')}`].filter(Boolean);
+  const rejected=Object.fromEntries(Object.entries(design).filter(([k,v])=>typeof v!=='object'));
+  return `VALIDATION FEEDBACK - attempt ${iter} was REJECTED by the deterministic Stage 5 gate for this ${T.label}:\n${lines.join('\n')}\nRejected values: ${JSON.stringify(rejected)}\nHard limits: ${limits.join('; ')}.\nPropose branches that fix EVERY failed check without breaking another. Do not repeat the rejected values.`;
+}
+function stage1FeedbackAddendum(){
+  const fb=PIPELINE_STATE.feedback;
+  if(!fb||fb.route!=='stage1')return'';
+  return `\n\nIMPORTANT - a previous design attempt from this email was rejected by the validation gate because the customer's stated requirements conflict with standards or machine limits:\n${fb.text}\nRe-extract the spec faithfully (keep every value the customer stated exactly as written - do not change or "fix" them), and add to unresolved_questions one concrete question per conflict that the customer must answer (for example "Approve UHMW-PE or POM instead of mild steel?" or "Accept the machine's rated maximum of 450 CPM instead of 500?").`;
+}
+function loopStatusLabel(){
+  const el=document.getElementById('loop-badge'); if(!el)return;
+  el.textContent=PIPELINE_STATE.iteration?`↺ feedback loop ${PIPELINE_STATE.iteration}/${MAX_LOOP_ITER}`:'';
+}
+async function runFeedbackLoop(){
+  if(!PIPELINE_STATE.spec){alert('Run Stage 1 first so the loop has a customer spec to reason from.');return;}
+  const btn=document.getElementById('demo-btn');
+  const standalone=!demoRunning;
+  for(let iter=PIPELINE_STATE.iteration+1;iter<=MAX_LOOP_ITER;iter++){
+    const design=designFromState(), res=validateDesign(design);
+    if(res.verdict==='accept')break;
+    const{route,failing}=classifyFailure(res);
+    if(route==='none'){console.warn('Feedback loop skipped: no validator for',res.type);break;}
+    PIPELINE_STATE.iteration=iter;loopStatusLabel();
+    const text=feedbackPacket(res,design,iter);
+    const reasons=failing.map(([k,v])=>v.reason);
+    PIPELINE_STATE.feedback={iter,route,text,reasons};
+    PIPELINE_STATE.history.push({iter,verdict:'reject',route,reasons});
+    renderState();
+    if(route==='stage1'){
+      if(btn)btn.innerHTML=`<span class="ospin" style="border-top-color:#fff"></span> Loop ${iter}/${MAX_LOOP_ITER}: Stage 1 clarification…`;
+      sel(1);await new Promise(r=>setTimeout(r,200));
+      try{await runStage1();}catch(e){console.error('loop stage 1 failed',e);}
+    }
+    if(btn)btn.innerHTML=`<span class="ospin" style="border-top-color:#fff"></span> Loop ${iter}/${MAX_LOOP_ITER}: Stage 3 redesign…`;
+    sel(3);await new Promise(r=>setTimeout(r,200));
+    try{await runStage3();}catch(e){console.error('loop stage 3 failed',e);}
+    const after=validateDesign(designFromState());
+    PIPELINE_STATE.history.push({iter,verdict:after.verdict,route:'after-redesign',reasons:after.reasons});
+    if(after.verdict==='accept')break;
+  }
+  PIPELINE_STATE.feedback=null;
+  renderState();loopStatusLabel();
+  if(standalone&&btn)btn.innerHTML='▶ Run Demo Pipeline';
+}
+
+/* ============================================================
+   CUSTOMER HAND-OFF  (customer.html)  — allowlist, never cost / tolerances / scores
+   ============================================================ */
+const CUSTOMER_ALLOWED=['part_type','material_id','machine_id','target_speed_cpm','bottle_diameter_mm','bottle_height_mm'];
+function customerPayload(){
+  const type=CAD_STATE.type,T=PART_TYPES[type],d=designFromState(),res=validateDesign(d);
+  const design={};for(const k of [...Object.keys(T.defaults),...CUSTOMER_ALLOWED])if(k in d)design[k]=d[k];
+  const dims=(T.customerDims&&T.customerDims.length)?T.customerDims
+    :Object.keys(T.defaults).map(k=>({k,l:k.replace(/_mm$|_deg$/,'').replace(/_/g,' ').replace(/^./,c=>c.toUpperCase()),u:/_mm$/.test(k)?'mm':(/_deg$/.test(k)?'°':'')}));
+  const spec=PIPELINE_STATE.spec||{};
+  const questions=[...(Array.isArray(spec.unresolved_questions)?spec.unresolved_questions:[]),...((PIPELINE_STATE.clarification&&PIPELINE_STATE.clarification.questions)||[])];
+  /* Only the steps a customer has a stake in — 1b (drawing reading) and 8 (outcome
+     learning) are internal and would just add noise. */
+  const CUSTOMER_STAGES=[1,2,3,4,5,6,7];
+  const stages=CUSTOMER_STAGES.map(id=>{const el=document.getElementById('ss-'+id);return{id:String(id),name:STAGES[id].nm,status:el?el.className.replace('sstat ','').replace('st-',''):'rdy'};});
+  return{version:1,generatedAt:new Date().toISOString(),part_type:type,label:T.label,summary:T.summary||'',design,dims,
+    verdict:res.verdict,issues:res.reasons,checks:Object.entries(res.checks).map(([k,v])=>({name:k,pass:v.pass})),
+    open_questions:[...new Set(questions)],history:PIPELINE_STATE.history,stages,svg:svg2D(true),
+    branch:PIPELINE_STATE.chosenBranch?{id:PIPELINE_STATE.chosenBranch.branch_id||'',rationale:PIPELINE_STATE.chosenBranch.rationale||''}:null,
+    backend:BACKEND.base};
+}
+function openCustomerView(){
+  const res=validateDesign(designFromState());
+  if(res.verdict==='unvalidated'&&!confirm('Stage 5 has no physics for this part type yet, so nothing has been checked.\n\nOpen the customer page anyway? (It will be shown as still in progress.)'))return;
+  const payload=customerPayload();
+  try{localStorage.setItem('morrison_customer_payload',JSON.stringify(payload));}catch(e){}
+  const url=(location.protocol.startsWith('http')?'/customer':'customer.html')+'?t='+Date.now();
+  window.open(url,'morrison_customer');
+}
+function checkCustomerInbox(){
+  let req=null,dec=null;
+  try{req=JSON.parse(localStorage.getItem('morrison_customer_request')||'null');dec=JSON.parse(localStorage.getItem('morrison_customer_decision')||'null');}catch(e){}
+  const el=document.getElementById('inbox'); if(!el)return;
+  if(!req&&!dec){el.style.display='none';el.innerHTML='';return;}
+  el.style.display='block';
+  el.innerHTML=(dec?`<div class="tipbox"><div class="tipttl">✅ Customer decision: ${escHtml(dec.decision)} <span style="color:var(--t3);font-weight:400">(${new Date(dec.ts).toLocaleString()})</span></div><div class="tiptxt">${escHtml(dec.note||'')}</div></div>`:'')
+    +(req?`<div class="warnbox" style="border-color:rgba(0,212,180,.3);background:var(--teal-s)"><div class="warnttl" style="color:var(--teal)">👤 Customer requested a change <span style="color:var(--t3);font-weight:400">(${new Date(req.ts).toLocaleString()})</span></div><div class="warntxt">“${escHtml(req.text)}”</div><div class="orow" style="margin-top:8px"><button class="obtn" onclick="applyCustomerRequest()">Load into Stage 7 →</button><button class="tr-btn" onclick="localStorage.removeItem('morrison_customer_request');localStorage.removeItem('morrison_customer_decision');checkCustomerInbox()">dismiss</button></div></div>`:'');
+}
+function applyCustomerRequest(){
+  let req=null;try{req=JSON.parse(localStorage.getItem('morrison_customer_request')||'null');}catch(e){}
+  if(!req)return;
+  STAGE_INPUT_CACHE['o7-instr']=req.text;
+  localStorage.removeItem('morrison_customer_request');
+  checkCustomerInbox();
+  sel(7);
+}
+
+/* ============================================================
+   TELEMETRY / TRACE (per Ollama call: latency, tokens, throughput)
+   ============================================================ */
+const TRACE=[];
+let CURRENT_TRACE_STAGE='';
+function traceRecord(entry){
+  TRACE.push({ts:Date.now(),...entry});
+  renderTrace();
+}
+function metaFromOllama(j,ms){
+  const p=j.prompt_eval_count||0,e=j.eval_count||0,ed=(j.eval_duration||0)/1e9;
+  return{ms:Math.round(ms),promptTokens:p,evalTokens:e,tokPerSec:ed>0?Math.round(e/ed*10)/10:null,loadMs:Math.round((j.load_duration||0)/1e6)};
+}
+function metaLine(res){
+  const m=res&&res.meta; if(!m)return'';
+  return `⏱ ${(m.ms/1000).toFixed(1)}s · ${m.promptTokens} prompt + ${m.evalTokens} gen tokens${m.tokPerSec?' · '+m.tokPerSec+' tok/s':''}${m.loadMs>1000?' · model load '+(m.loadMs/1000).toFixed(1)+'s':''}\n`;
+}
+function renderTrace(){
+  const el=document.getElementById('trace'); if(!el)return;
+  if(!TRACE.length){el.innerHTML='<div class="tr-empty">No model calls yet.</div>';return;}
+  const total=TRACE.reduce((a,t)=>a+(t.ms||0),0);
+  el.innerHTML=TRACE.slice(-12).map(t=>`<div class="tr-row ${t.ok?'':'tr-bad'}"><span class="tr-st">S${t.stage||'?'}</span><span class="tr-m">${escHtml((t.model||'').replace(':latest',''))}</span><span class="tr-t">${t.ms!=null?(t.ms/1000).toFixed(1)+'s':'—'}</span><span class="tr-k">${t.evalTokens!=null?(t.promptTokens+'→'+t.evalTokens):(t.kind||'')}</span><span class="tr-ok">${t.ok?'✓':'✗'}</span></div>`).join('')
+    +`<div class="tr-sum">${TRACE.length} calls · ${(total/1000).toFixed(0)}s total <button class="tr-btn" onclick="navigator.clipboard&&navigator.clipboard.writeText(JSON.stringify(TRACE,null,2))">copy JSON</button> <button class="tr-btn" onclick="TRACE.length=0;renderTrace()">clear</button></div>`;
 }
 
 /* ============================================================
@@ -1209,7 +1503,7 @@ ${tip('&#9940; No AI Model &mdash; By Design','Stage 5 is the deterministic safe
 <div id="v5form">${s5Form(type)}</div>
 <div id="scout"></div>`}
 
-const PART_COMMON_DEFAULTS={starwheel:{bottle_diameter_mm:54},feed_screw:{bottle_diameter_mm:66},guide_rail:{bottle_diameter_mm:54,bottle_height_mm:210}};
+let PART_COMMON_DEFAULTS={starwheel:{bottle_diameter_mm:54},feed_screw:{bottle_diameter_mm:66},guide_rail:{bottle_diameter_mm:54,bottle_height_mm:210}};
 function switchPartType(type){
   if(!PART_TYPES[type])return;
   CAD_STATE.type=type;
@@ -1265,13 +1559,19 @@ function renderScorecard(el,res,d){
     <div class="pbar"><div class="pfill ${t.ok?'pg':'pr'}" style="width:${pct}%"></div></div></div>`;
   }).join('');
   const vcls=res.verdict==='accept'?'vacc':'vrej';
-  const vico=res.verdict==='accept'?'&#9989;':'&#10060;';
+  const vico=res.verdict==='accept'?'&#9989;':(res.verdict==='unvalidated'?'&#9888;':'&#10060;');
   const sc3=res.verdict==='accept'?`<span style="margin-left:auto;font-size:11px;color:var(--t2)">Score: <b style="color:var(--grn)">${c.ws}</b></span>`:'';
   el.innerHTML=`
 <div class="scard">
 <div class="shd"><div class="vbadge ${vcls}">${vico} ${res.verdict.toUpperCase()}</div><span style="font-size:11px;color:var(--t2);margin-left:6px">${escHtml(PART_TYPES[res.type].label)}</span>${sc3}</div>
 <div class="scomp">${tiles}</div>
 <div class="cklist">${ckH}</div></div>
+<div class="orow" style="margin:-6px 0 12px;align-items:center">
+  ${res.verdict==='reject'&&PIPELINE_STATE.spec?'<button class="obtn" style="padding:5px 10px;font-size:11px" onclick="runFeedbackLoop()" title="Send these failures back to Stage 3 (redesign) or Stage 1 (customer clarification) and re-run, up to 3 iterations">&#8635; Feed back to design</button>':''}
+  ${res.verdict==='unvalidated'?'<span class="ohint" style="margin:0;color:var(--red)">This part type has no physics yet — it cannot be sent to a customer.</span>':''}
+  <button class="tr-btn" onclick="pythonCrossCheck()">cross-check with Python engine</button>
+  <span id="pycheck" class="ohint" style="margin:0"></span>
+</div>
 <div class="sec">&#128208; Formulas (from stage5_engine.py)</div>
 <div class="cb" style="font-size:10px">${formulasFor(res,d)}</div>`;
 }
@@ -1526,12 +1826,21 @@ function buildGuideRail(g,P,C){
   return R+t;
 }
 
+/* A registry part with no mesh builder must not borrow another part's geometry —
+   it would render NaN meshes from mismatched parameter names. */
+const HAS_GEOMETRY={starwheel:1,feed_screw:1,guide_rail:1};
 function bldW(){
   const type=CAD_STATE.type,P=CAD_STATE.params,C=CAD_STATE.common;
   updGS();
   if(viewMode==='2d')draw2D();
   if(!glReady)return;
   if(wg){scene.remove(wg);wg=null;}
+  if(!HAS_GEOMETRY[type]){
+    const ci=document.getElementById('ci');
+    if(ci)ci.textContent='No 3D model for "'+((PART_TYPES[type]&&PART_TYPES[type].label)||type)+'" yet — see docs/ADDING_A_PART.md step 4';
+    if(renderer&&scene&&camera)renderer.render(scene,camera);
+    return;
+  }
   wg=new THREE.Group();
   let extent,ciText;
   if(type==='feed_screw'){extent=buildFeedScrew(wg,P,C);ciText='Feed screw ⌀'+P.outer_diameter_mm+' × '+P.length_mm+'mm · pitch '+P.pitch_mm+'mm · '+Math.round(P.starts)+'-start '+P.handedness;}
@@ -1579,11 +1888,18 @@ function updGS(){
 function svgDimH(x1,x2,y,label){return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#f5a623" stroke-width="0.8" marker-start="url(#ar)" marker-end="url(#ar)"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><text x="${(x1+x2)/2}" y="${y-3}" text-anchor="middle" class="dvl" fill="#f5a623">${label}</text>`;}
 function svgDimV(x,y1,y2,label,side){const left=side==='left';return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#f5a623" stroke-width="0.8" marker-start="url(#ar)" marker-end="url(#ar)"/><line x1="${x-6}" y1="${y1}" x2="${x+6}" y2="${y1}" stroke="#f5a623" stroke-width="0.6"/><line x1="${x-6}" y1="${y2}" x2="${x+6}" y2="${y2}" stroke="#f5a623" stroke-width="0.6"/><text x="${left?x-4:x+4}" y="${(y1+y2)/2+3}" text-anchor="${left?'end':'start'}" class="dvl" fill="#f5a623">${label}</text>`;}
 function svgDimHStart(x1,x2,y,label){return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#f5a623" stroke-width="0.8" marker-start="url(#ar)" marker-end="url(#ar)"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="#f5a623" stroke-width="0.6"/><text x="${x1}" y="${y-3}" text-anchor="start" class="dvl" fill="#f5a623">${label}</text>`;}
-function draw2D(){
-  const dv=document.getElementById('dv'); if(!dv)return;
+function draw2D(){const dv=document.getElementById('dv');if(dv)dv.innerHTML=svg2D();}
+function svg2D(forCustomer){
   const P=CAD_STATE.params,C=CAD_STATE.common,type=CAD_STATE.type,T=PART_TYPES[type];
   const W=400,H=400; let body='', title=T.label;
   const defs=`<defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f5a623"/></marker></defs>`;
+  if(!HAS_GEOMETRY[type]){
+    const dims=Object.entries(P).filter(([k,v])=>typeof v==='number').map(([k,v],i)=>`<text x="200" y="${180+i*18}" text-anchor="middle" class="dvl">${escHtml(k.replace(/_/g,' '))}: ${v}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${defs}
+      <text x="200" y="130" text-anchor="middle" class="dvl" fill="#f5a623">No drawing for ${escHtml(T.label)} yet</text>
+      <text x="200" y="150" text-anchor="middle" class="dvt">Parameters received from the pipeline:</text>${dims}
+      <text x="200" y="${H-30}" text-anchor="middle" class="dvt">Add a geometry branch — docs/ADDING_A_PART.md step 4</text></svg>`;
+  }
   if(type==='starwheel'){
     const pcd=P.pcd_mm,n=Math.round(P.pocket_count),r=P.pocket_radius_mm,OD=pcd+2*r+2*P.rim_mm,s=250/OD,cx=200,cy=190;
     body+=`<circle cx="${cx}" cy="${cy}" r="${OD/2*s}" fill="#141f38" stroke="#eef2ff" stroke-width="1.2"/>`;
@@ -1627,11 +1943,17 @@ function draw2D(){
     title+=' — PLAN VIEW · h = '+P.rail_height_mm+' mm · contact @ '+P.contact_height_mm+' mm';
   }
   const res=validateDesign(designFromState());
+  const line2=forCustomer
+    ? `${escHtml(C.material_id)} · for your ${escHtml(C.machine_id)} at ${C.target_speed_cpm} containers/min`
+    : `MATERIAL ${escHtml(C.material_id)} · MACHINE ${escHtml(C.machine_id)} · ${C.target_speed_cpm} CPM · STAGE 5: ${res.verdict.toUpperCase()}`;
+  const line3=forCustomer
+    ? 'Morrison Container Handling Solutions — dimensions shown for approval'
+    : 'MORRISON CHANGE-PART PIPELINE · CUSTOMER VIEW (dimensions only — tolerances &amp; cost withheld)';
   const tb=`<rect x="6" y="${H-46}" width="${W-12}" height="40" fill="#0e1120" stroke="#45506e" stroke-width="0.6"/>
     <text x="12" y="${H-32}" class="dvl">${escHtml(title)}</text>
-    <text x="12" y="${H-20}" class="dvt">MATERIAL ${escHtml(C.material_id)} · MACHINE ${escHtml(C.machine_id)} · ${C.target_speed_cpm} CPM · STAGE 5: ${res.verdict.toUpperCase()}</text>
-    <text x="12" y="${H-9}" class="dvt">MORRISON CHANGE-PART PIPELINE · CUSTOMER VIEW (dimensions only — tolerances &amp; cost withheld)</text>`;
-  dv.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${defs}${body}${tb}</svg>`;
+    <text x="12" y="${H-20}" class="dvt">${line2}</text>
+    <text x="12" y="${H-9}" class="dvt">${line3}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${defs}${body}${tb}</svg>`;
 }
 
 function loop(){requestAnimationFrame(loop);if(spinning&&wg)wg.rotation.y+=0.008;controls.update();renderer.render(scene,camera)}
@@ -1685,6 +2007,7 @@ async function runDemo(){
         try{ await LIVE_RUNNERS[id](); }
         catch(err){ console.error('Auto-demo stage '+id+' failed:',err); }
         if(dot)dot.className='sstat st-done';
+        if(id===3){ try{ await runFeedbackLoop(); }catch(err){ console.error('Feedback loop failed:',err); } sel(3); }
       }else if(id==='1b'){
         if(dot)dot.className='sstat st-done';
       }else if(id===5||id===6){
@@ -1740,7 +2063,7 @@ async function runStage1(){
   const model=modelEl.value.trim();
   const email=document.getElementById('o1-input').value;
   const res=await runOllamaStage({model,outId:'o1-out',btnId:'o1-btn',btnLabel:'▶ Run with Ollama',
-    callFn:()=>ollamaChat({model,system:STAGE1_SYSTEM,user:email,json:true})});
+    callFn:()=>ollamaChat({model,system:STAGE1_SYSTEM+stage1FeedbackAddendum(),user:email,json:true})});
   if(!res)return;
   let parsed=null; try{parsed=JSON.parse(res.text);}catch(e){}
   let note='';
@@ -1760,9 +2083,17 @@ async function runStage1(){
     STAGE_INPUT_CACHE['o3-input']=stage3ContextText(parsed,null);
     delete STAGE_INPUT_CACHE['o4-input']; delete STAGE_INPUT_CACHE['o7-base'];
     note+=`🔗 Stage 3's context reset to this spec + the ${T?T.label.toLowerCase():''} precedent library; Stage 4/7 will follow Stage 3's chosen branch.\n`;
+    const fb=PIPELINE_STATE.feedback;
+    if(fb&&fb.route==='stage1'){
+      const qs=Array.isArray(parsed.unresolved_questions)?parsed.unresolved_questions:[];
+      PIPELINE_STATE.clarification={iter:fb.iter,reasons:fb.reasons,questions:qs};
+      note+=`\n📨 CUSTOMER CLARIFICATION DRAFT (feedback loop ${fb.iter})\nWhile designing your ${T?T.label.toLowerCase():'part'} we found that some stated requirements conflict with standards or machine limits:\n${fb.reasons.map(r=>'  • '+r).join('\n')}\nPlease confirm:\n${qs.length?qs.map(q=>'  ? '+q).join('\n'):'  ? (the model listed no questions — see the conflicts above)'}\n(This draft is shown on the customer page under "Open questions".)\n`;
+    }else{
+      PIPELINE_STATE.iteration=0;PIPELINE_STATE.history=[];PIPELINE_STATE.clarification=null;loopStatusLabel();
+    }
     note+='\n';
   }
-  oShowResult('o1-out', note+tryPrettyJSON(res.text));
+  oShowResult('o1-out', metaLine(res)+note+tryPrettyJSON(res.text));
 }
 
 async function runStage1b(){
@@ -1782,7 +2113,7 @@ async function runStage1b(){
   oShowResult('o1b-out', tryPrettyJSON(res.text));
 }
 
-const PRECEDENTS=[
+let PRECEDENTS=[
   {id:'SW-10882',part_type:'starwheel',text:'16-pocket starwheel, PCD 620mm, UHMW-PE pockets, Morrison CAP-16, bottle diameter 54mm, ran clean at 380 CPM.',outcome:'clean'},
   {id:'SW-10884',part_type:'starwheel',text:'16-pocket starwheel, PCD 620mm, UHMW-PE pockets, Morrison CAP-16, tight 0.15mm effective clearance, bottle bound and jammed the line.',outcome:'jammed'},
   {id:'SW-11020',part_type:'starwheel',text:'24-pocket starwheel, PCD 900mm, POM pockets, Morrison CAP-24, high speed 700 CPM, ran clean.',outcome:'clean'},
@@ -1803,6 +2134,8 @@ async function runStage2(){
     const type=currentType();
     let pool=PRECEDENTS.filter(p=>p.part_type===type);
     if(pool.length<2)pool=PRECEDENTS;
+    CURRENT_TRACE_STAGE='2';
+    const t0=performance.now();
     const qv=await ollamaEmbed({model,text:query});
     const rows=[];
     for(const p of pool){
@@ -1815,7 +2148,7 @@ async function runStage2(){
     const byRawSim=[...rows].sort((a,b)=>b.sim-a.sim);
     const flip=byRawSim[0].id!==rows[0].id;
     oSetBusy('o2-btn',false,'▶ Compute embeddings + rank');
-    let out=`Query: "${query}"\nLibrary: ${pool.length} ${PART_TYPES[type]?PART_TYPES[type].label.toLowerCase():''} precedents\n\n`;
+    let out=`⏱ ${((performance.now()-t0)/1000).toFixed(1)}s · ${pool.length+1} embedding calls · ${qv.embedding.length}-dim vectors\nQuery: "${query}"\nLibrary: ${pool.length} ${PART_TYPES[type]?PART_TYPES[type].label.toLowerCase():''} precedents\n\n`;
     if(flip) out+=`✓ Outcome-weighting changed the #1 result: "${byRawSim[0].id}" had the highest raw similarity, but jammed in service, so it was outranked by a lower-similarity but clean precedent.\n\n`;
     else out+=`(Raw similarity and outcome-weighted ranking agree on #1 here — edit the query toward the jammed precedent's wording to see the reranking kick in.)\n\n`;
     rows.forEach((r,i)=>{
@@ -1835,11 +2168,12 @@ async function runStage2(){
   }
 }
 
-const KNOWN_PRECEDENT_IDS=PRECEDENTS.map(p=>p.id);
+let KNOWN_PRECEDENT_IDS=PRECEDENTS.map(p=>p.id);
 
 async function runStage3(){
   const model=document.getElementById('o3-model').value.trim();
-  const context=document.getElementById('o3-input').value;
+  let context=document.getElementById('o3-input').value;
+  const fb=PIPELINE_STATE.feedback; if(fb&&fb.text)context+='\n\n'+fb.text;
   const type=currentType(), T=PART_TYPES[type];
   const m=CAD_STATE.common.machine_id, mc=MAC[m]||{};
   const system=`You are a mechanical design reasoning engine for packaging-machine change parts. Part type: ${type} (${T.label}).
@@ -1850,9 +2184,10 @@ Output ONLY a JSON object {"branches":[...]} where each branch has: branch_id, $
     callFn:()=>ollamaChat({model,system,user:context,json:true})});
   if(!res)return;
   const grounded=KNOWN_PRECEDENT_IDS.some(id=>res.text.includes(id));
-  let note=grounded
+  let note=(fb&&fb.text?`↺ Feedback loop ${fb.iter}/${MAX_LOOP_ITER} — redesign constrained by Stage 5 feedback (${fb.route==='stage1'?'after customer clarification':'geometry route'})\n`:'')
+    +(grounded
     ? '✓ Grounding check: rationale references a real precedent ID.\n'
-    : '⚠ Grounding check: no known precedent ID found in the output — rationale may be generic/ungrounded.\n';
+    : '⚠ Grounding check: no known precedent ID found in the output — rationale may be generic/ungrounded.\n');
   const arr=extractBranches(res.text);
   if(arr&&arr.length){
     const{evald,pick}=chooseBranch(PIPELINE_STATE.spec,arr);
@@ -1871,7 +2206,7 @@ Output ONLY a JSON object {"branches":[...]} where each branch has: branch_id, $
   }else{
     note+='⚠ Could not parse candidate branches from the output — Stage 4/7 inputs left unchanged.\n\n';
   }
-  oShowResult('o3-out', note+tryPrettyJSON(res.text));
+  oShowResult('o3-out', metaLine(res)+note+tryPrettyJSON(res.text));
 }
 
 async function runStage4(){
@@ -1887,7 +2222,7 @@ async function runStage4(){
   const checks=T.cadChecks.map(([re,label])=>({label,pass:re.test(code)}));
   const summary=checks.map(c=>(c.pass?'✓':'✗')+' '+c.label).join('\n');
   oShowResult('o4-out',
-    'Layer-1-style static check for a '+T.label+' (string/regex only — NOT a real AST parse or OCCT geometry probe):\n'+summary+
+    metaLine(res)+'Layer-1-style static check for a '+T.label+' (string/regex only — NOT a real AST parse or OCCT geometry probe):\n'+summary+
     '\n\n⚠ Layers 2 (execute) and 3 (OCCT geometry probing — e.g. pockets that only cut partway through, or a screw "flight" that never forms a helix) need a real local Python + CadQuery install — see stage4_executed.ipynb and stage5_engine.build_*_solid().\n\n'+
     '--- Generated script ---\n\n'+code);
 }
@@ -1925,7 +2260,7 @@ async function runStage7(){
   applySpecToCad(merged);
   out+='🔗 3D viewer / 2D drawing updated to the refined design.\n';
   out+='\n--- Merged design after edit ---\n'+JSON.stringify(merged,null,2);
-  oShowResult('o7-out',out);
+  oShowResult('o7-out',metaLine(res)+out);
 }
 
 /* ============================================================
@@ -1937,6 +2272,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{ initGL(); }catch(err){ console.error('3D viewer init failed:',err); viewerFallback('⚠ 3D viewer failed to start. Geometry stats still update below.'); }
   try{ if(!glReady)bldW(); }catch(err){ console.error('Geometry stats init failed:',err); }
   refreshOllamaStatus();
+  loadRegistry().then(()=>{ try{ renderCadControls(); bldW(); render(cur); }catch(err){ console.error('Registry apply failed:',err); } });
+  renderState(); loopStatusLabel(); checkCustomerInbox();
+  window.addEventListener('focus',checkCustomerInbox);
+  window.addEventListener('storage',checkCustomerInbox);
 });
 </script>
 </body>
