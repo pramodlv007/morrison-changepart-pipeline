@@ -150,10 +150,72 @@ const GR = { part_type: 'guide_rail', rail_radius_mm: 340, arc_angle_deg: 120, r
     switchPartType('feed_screw');
     const i = document.getElementById('cs_pitch_mm'); i.value = 60; i.dispatchEvent(new Event('input'));
     return { state: CAD_STATE.params.pitch_mm, form: document.getElementById('v_pitch_mm').value,
+      picker: document.getElementById('vtype').value,
       verdict: document.querySelector('#scout .vbadge').textContent.trim() };
   });
   pass('viewer slider syncs the Stage 5 form and revalidates',
     sync.state === 60 && sync.form === '60' && /REJECT/.test(sync.verdict), JSON.stringify(sync));
+  pass('part-type picker stays in sync when switched in code', sync.picker === 'feed_screw', sync.picker);
+
+  group('Engineering viewer interactions');
+  const tools = await dash.evaluate(() => ({
+    presets: document.querySelectorAll('[data-vp]').length, vtools: document.querySelectorAll('[data-vtool]').length,
+    legacy: ['bspin', 'bwire', 'bstep'].filter(id => !!document.getElementById(id)).length
+  }));
+  pass('presets and tools present, engineering buttons kept',
+    tools.presets === 3 && tools.vtools === 3 && tools.legacy === 3, JSON.stringify(tools));
+
+  for (const t of ['starwheel', 'feed_screw', 'guide_rail']) {
+    const g = await dash.evaluate(type => {
+      switchPartType(type);
+      const gh = wg.getObjectByName('ghosts');
+      return { n: gh ? gh.children.length : 0, vis: gh ? gh.visible : null };
+    }, t);
+    pass(t + ': containers drawn to scale in the engineering viewer', g.n > 0 && g.vis === true, JSON.stringify(g));
+  }
+
+  const inter = await dash.evaluate(async () => {
+    switchPartType('starwheel');
+    const camBefore = camera.position.toArray().map(Math.round).join(',');
+    viewPreset('top'); await new Promise(r => setTimeout(r, 900));
+    const camAfter = camera.position.toArray().map(Math.round).join(',');
+    toggleExplode(); await new Promise(r => setTimeout(r, 800));
+    const moved = wg.children.some(c => c.userData.explode && c.userData.base &&
+      Math.abs(c.position.y - c.userData.base.y) > 1);
+    toggleExplode(); await new Promise(r => setTimeout(r, 900));
+    const restored = wg.children.every(c => !c.userData.explode || !c.userData.base ||
+      Math.abs(c.position.y - c.userData.base.y) < 3);
+    toggleGhosts(); const ghostsOff = wg.getObjectByName('ghosts').visible; toggleGhosts();
+    const hiddenByDefault = [...document.querySelectorAll('#ccc .hs')].every(e => e.style.display === 'none');
+    toggleHotspots(); await new Promise(r => setTimeout(r, 400));
+    const box = document.getElementById('ccc').getBoundingClientRect();
+    const inside = [...document.querySelectorAll('#ccc .hs')].filter(e => { const r = e.getBoundingClientRect();
+      return r.width && r.y > box.y && r.y < box.y + box.height && r.x > box.x && r.x < box.x + box.width; }).length;
+    document.querySelectorAll('#ccc .hs')[0].click(); await new Promise(r => setTimeout(r, 300));
+    const open = document.querySelectorAll('#ccc .hscard.show').length;
+    toggleHotspots();
+    tWire(); const wire = wframe; tWire();
+    return { camMoved: camBefore !== camAfter, moved, restored, ghostsOff, hiddenByDefault, inside, open, wire };
+  });
+  pass('camera preset flies the camera', inter.camMoved, '');
+  pass('exploded view separates and restores', inter.moved && inter.restored, JSON.stringify({ moved: inter.moved, restored: inter.restored }));
+  pass('container ghosts toggle', inter.ghostsOff === false, '');
+  pass('annotations off by default, project inside the viewer, open a card',
+    inter.hiddenByDefault && inter.inside === 3 && inter.open === 1, JSON.stringify({ inside: inter.inside, open: inter.open }));
+  pass('wireframe still works', inter.wire === true, '');
+
+  const live = await dash.evaluate(async () => {
+    switchPartType('starwheel');
+    const i = document.getElementById('cs_pocket_count'); i.value = 24; i.dispatchEvent(new Event('input'));
+    await new Promise(r => setTimeout(r, 300));
+    return { pockets: CAD_STATE.params.pocket_count,
+      rings: wg.children.filter(c => c.geometry && c.geometry.type === 'TorusGeometry').length,
+      stats: document.getElementById('gs').innerText.replace(/\n/g, ' '),
+      verdict: document.querySelector('#scout .vbadge').textContent.trim() };
+  });
+  pass('parameter slider rebuilds geometry, stats and verdict live',
+    live.pockets === 24 && live.rings >= 24 && /24 ×/.test(live.stats) && /ACCEPT|REJECT/.test(live.verdict),
+    'pockets=' + live.pockets + ' rings=' + live.rings);
 
   // ------------------------------------------------------------- chaining
   group('Cross-stage chaining');
