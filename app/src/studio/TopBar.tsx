@@ -134,7 +134,7 @@ function CommandMenu({ open, onOpenChange, openInbox }: { open: boolean; onOpenC
 
 function InboxSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const [designs, setDesigns] = useState<DesignRecord[] | null>(null), [requests, setRequests] = useState<CustomerRequest[] | null>(null)
-  const set = useStudio(s => s.set), setPartType = useStudio(s => s.setPartType), reg = useRuntime(r => r.registry)
+  const set = useStudio(s => s.set), setPartType = useStudio(s => s.setPartType), loadDesign = useStudio(s => s.loadDesign), reg = useRuntime(r => r.registry)
   const load = async () => {
     try { const [d, r] = await Promise.all([listDesigns(), listRequests()]); setDesigns(d); setRequests(r) }
     catch { setDesigns([]); setRequests([]); toast.error('Inbox unavailable', 'The backend is not reachable.') }
@@ -151,13 +151,17 @@ function InboxSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
             <ul className="space-y-2">
               {[...requests].reverse().map(r => (
                 <li key={r.id} className="rounded-xl border border-border bg-surface-2/40 p-3.5">
-                  <div className="flex items-center gap-2"><Badge tone="accent">{reg.parts[r.part_type]?.label ?? r.part_type}</Badge><span className="text-[12px] text-ink-3">{new Date(r.ts).toLocaleString()}</span></div>
+                  <div className="flex flex-wrap items-center gap-2"><Badge tone="accent">{reg.parts[r.part_type]?.label ?? r.part_type}</Badge>
+                    {r.design && <Badge tone={r.verdict === 'accept' ? 'success' : 'warning'}>Configured · {r.verdict === 'accept' ? 'passes checks' : 'needs work'}</Badge>}
+                    <span className="text-[12px] text-ink-3">{new Date(r.ts).toLocaleString()}</span></div>
                   <div className="mt-1.5 text-[13px] text-ink">{r.contact}{r.company && <span className="text-ink-3"> · {r.company}</span>}</div>
                   {r.notes && <p className="mt-1 text-[12.5px] text-ink-2 line-clamp-3">{r.notes}</p>}
                   <Button size="sm" variant="secondary" className="mt-2" onClick={() => {
                     if (reg.parts[r.part_type]) setPartType(r.part_type, reg)
-                    set({ email: toEmail(r), selected: '1', tab: 'input', view: 'pipeline' }); onOpenChange(false); toast.info('Loaded into Stage 1')
-                  }}>Load into Stage 1</Button>
+                    if (r.design && reg.parts[r.design.part_type]) { loadDesign(r.design); set({ baseline: r.design }) }
+                    set({ email: toEmail(r), selected: r.design ? '5' : '1', tab: r.design ? 'output' : 'input', view: 'pipeline' }); onOpenChange(false)
+                    toast.info(r.design ? 'Customer design loaded' : 'Loaded into Stage 1', r.design ? 'Their configuration is in the design panel and validated in Stage 5; the request text is in Stage 1.' : undefined)
+                  }}>{r.design ? 'Open their design' : 'Load into Stage 1'}</Button>
                 </li>
               ))}
             </ul>

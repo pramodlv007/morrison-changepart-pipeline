@@ -338,6 +338,11 @@ class Handler(SimpleHTTPRequestHandler):
             req = {"id": _new_id(), "contact": str(body.get("contact", ""))[:200], "company": str(body.get("company", ""))[:200],
                    "part_type": str(body.get("part_type", ""))[:60], "details": body.get("details") or {},
                    "notes": str(body.get("notes", ""))[:5000], "ts": now()}
+            design = body.get("design")
+            if isinstance(design, dict) and isinstance(design.get("part_type"), str):
+                # the customer's configured design, numbers and short strings only
+                req["design"] = {str(k)[:60]: v for k, v in design.items() if isinstance(v, (int, float, str)) and len(str(v)) <= 60}
+                req["verdict"] = str(body.get("verdict", ""))[:20]
             with _LOCK:
                 store = _load_store()
                 store["requests"].append(req)

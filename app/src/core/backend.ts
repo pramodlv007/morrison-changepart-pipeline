@@ -42,7 +42,7 @@ export interface CustomerPayload {
 }
 export interface CustomerResponse { kind: 'approve' | 'request'; text: string; adjustments: Record<string, any>; answers: { q: string; a: string }[]; ts: string }
 export interface DesignRecord { id: string; payload: CustomerPayload; responses: CustomerResponse[]; created: string; updated: string }
-export interface CustomerRequest { id: string; contact: string; company: string; part_type: string; details: Record<string, any>; notes: string; ts: string }
+export interface CustomerRequest { id: string; contact: string; company: string; part_type: string; details: Record<string, any>; notes: string; ts: string; design?: Design; verdict?: string }
 
 const H = { 'Content-Type': 'application/json' }
 export const publishDesign = async (payload: CustomerPayload, id?: string) =>

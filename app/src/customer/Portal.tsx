@@ -1,7 +1,7 @@
 /** Customer design review: four calm steps, no jargon, every change checked live. */
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Download, Hexagon, MessageSquare, PencilLine, Printer, Redo2, RotateCcw, Send, ShieldCheck, SlidersHorizontal, Sparkles, ThumbsUp, Undo2,
+  ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Download, Hexagon, MessageSquare, Printer, Redo2, RotateCcw, Send, ShieldCheck, SlidersHorizontal, Sparkles, ThumbsUp, Undo2,
 } from 'lucide-react'
 import { validateDesign, type Design } from '@/core/validate'
 import { FOOD_SAFE_MATERIALS, MACHINES, MATERIALS } from '@/core/standards'
@@ -17,6 +17,7 @@ import { Button, Card, cn, IconButton, NativeSelect, Textarea } from '@/ui/primi
 import { toast } from '@/ui/overlay'
 import { currentOf, usePortal, type Step } from './store'
 import { dimLabel, FIELD_WORDS, fmtValue, MATERIAL_SWATCH } from './words'
+import { LiveStatus, NumberStepper, ReqCard, RotationToggle } from './controls'
 
 const STEPS: { id: Step; label: string; hint: string }[] = [
   { id: 'requirements', label: 'Requirements', hint: 'What you asked for' },
@@ -153,14 +154,7 @@ function Requirements({ part, design }: { part?: PartType; design: Design }) {
         </ReqCard>
         {design.handedness !== undefined && (
           <ReqCard label={FIELD_WORDS.handedness.label} changed={changed('handedness')}>
-            <div className="grid grid-cols-2 gap-2">
-              {['RH', 'LH'].map(h => (
-                <button key={h} onClick={() => edit('handedness', h)} className={cn('h-11 rounded-xl border text-[14px] font-medium transition cursor-pointer',
-                  String(design.handedness).toUpperCase().startsWith(h[0]) ? 'border-accent bg-accent-soft text-accent' : 'border-border text-ink-2 hover:border-border-strong')}>
-                  {fmtValue('handedness', h)}
-                </button>
-              ))}
-            </div>
+            <RotationToggle value={String(design.handedness)} onChange={v => edit('handedness', v)} />
           </ReqCard>
         )}
       </div>
@@ -187,43 +181,20 @@ function Requirements({ part, design }: { part?: PartType; design: Design }) {
   )
 }
 
-function ReqCard({ label, changed, children, className }: { label: string; changed?: boolean; children: ReactNode; className?: string }) {
-  return (
-    <Card className={cn('p-5 transition', changed && 'ring-2 ring-accent-2/40', className)}>
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[13px] font-medium text-ink-2">{label}</span>
-        {changed && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--accent-2)_12%,transparent)] px-2 py-0.5 text-[11.5px] font-semibold text-accent-2"><PencilLine className="size-3" />Changed</span>}
-      </div>
-      {children}
-    </Card>
-  )
-}
-
 function NumberReq({ k, design, changed, step, min, max }: { k: string; design: Design; changed: boolean; step: number; min: number; max: number }) {
   const edit = usePortal(s => s.edit)
-  const w = FIELD_WORDS[k], v = Number(design[k])
-  const [draft, setDraft] = useState(String(v))
-  useEffect(() => setDraft(String(v)), [v])
-  const commit = (x: number) => { if (Number.isFinite(x)) edit(k, Math.max(min, Math.min(max, Math.round(x / step) * step))) }
+  const w = FIELD_WORDS[k]
   return (
     <ReqCard label={w.label} changed={changed}>
-      <div className="flex items-center gap-2">
-        <button aria-label={`Decrease ${w.label}`} onClick={() => commit(v - step)} className="grid size-11 place-items-center rounded-xl border border-border text-[20px] text-ink-2 hover:border-border-strong cursor-pointer">−</button>
-        <div className="flex h-11 flex-1 items-center rounded-xl border border-border bg-surface-2 px-3 focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-soft">
-          <input aria-label={w.label} inputMode="decimal" value={draft} onChange={e => setDraft(e.target.value)} onBlur={e => commit(parseFloat(e.target.value))}
-            onKeyDown={e => e.key === 'Enter' && commit(parseFloat((e.target as HTMLInputElement).value))} className="num w-full bg-transparent text-[18px] font-semibold text-ink outline-none" />
-          <span className="whitespace-nowrap text-[12.5px] text-ink-3">{w.unit}</span>
-        </div>
-        <button aria-label={`Increase ${w.label}`} onClick={() => commit(v + step)} className="grid size-11 place-items-center rounded-xl border border-border text-[20px] text-ink-2 hover:border-border-strong cursor-pointer">+</button>
-      </div>
+      <NumberStepper label={w.label} value={Number(design[k])} onChange={v => edit(k, v)} step={step} min={min} max={max} unit={w.unit} />
       {w.help && <p className="mt-2 text-[12.5px] text-ink-3">{w.help}</p>}
     </ReqCard>
   )
 }
 
-export function MaterialPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function MaterialPicker({ value, onChange, narrow }: { value: string; onChange: (v: string) => void; narrow?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Material">
+    <div className={cn('grid grid-cols-2 gap-2', !narrow && 'sm:grid-cols-4')} role="radiogroup" aria-label="Material">
       {FOOD_SAFE_MATERIALS.map(m => {
         const on = m === value, sw = MATERIAL_SWATCH[m] ?? { color: '#eee', ring: '#ccc' }
         return (
@@ -256,7 +227,6 @@ function DesignStep({ part, design }: { part?: PartType; design: Design }) {
     return { controls, advanced, limits: [...controls, ...advanced] as SliderDef[] }
   }, [part])
   const bands = useMemo(() => Object.fromEntries(limits.map(s => [s.k, safeBands(design, s.k, s.min, s.max, 48)])), [design, limits])
-  const failing = card.checks.filter(c => !c.pass)
   const dirty = Object.keys(edits).length > 0
 
   return (
@@ -280,20 +250,7 @@ function DesignStep({ part, design }: { part?: PartType; design: Design }) {
         </div>
 
         <div className="space-y-4">
-          <Card className={cn('p-5', card.verdict === 'accept' ? 'bg-gradient-to-br from-white to-[color-mix(in_srgb,var(--success)_7%,white)]' : 'bg-gradient-to-br from-white to-[color-mix(in_srgb,var(--danger)_6%,white)]')} data-testid="live-status">
-            <div className="flex items-start gap-3">
-              <span className={cn('grid size-10 shrink-0 place-items-center rounded-2xl', card.verdict === 'accept' ? 'bg-success text-white' : 'bg-danger text-white')}>
-                {card.verdict === 'accept' ? <ShieldCheck className="size-5" /> : <CircleX className="size-5" />}
-              </span>
-              <div>
-                <div className="text-[16px] font-semibold text-ink">{card.verdict === 'accept' ? 'Everything checks out' : card.verdict === 'unvalidated' ? 'Checks being set up' : 'This setting will not work yet'}</div>
-                <p className="mt-0.5 text-[13.5px] leading-relaxed text-ink-2">
-                  {card.verdict === 'accept' ? `All ${card.checks.length} engineering checks pass for your line.` : failing[0]?.plainReason}
-                </p>
-                {failing.length > 1 && <p className="mt-1 text-[12.5px] text-ink-3">+ {failing.length - 1} more — see the Checks step.</p>}
-              </div>
-            </div>
-          </Card>
+          <LiveStatus card={card} />
 
           <Card className="p-5">
             <div className="mb-1 flex items-center gap-2"><Sparkles className="size-4 text-accent" /><h2 className="text-[15px] font-semibold text-ink">Adjust</h2></div>
@@ -310,7 +267,7 @@ function DesignStep({ part, design }: { part?: PartType; design: Design }) {
 
           <Card className="p-5">
             <h2 className="mb-3 text-[15px] font-semibold text-ink">Material</h2>
-            <MaterialPicker value={String(design.material_id)} onChange={v => edit('material_id', v)} />
+            <MaterialPicker narrow value={String(design.material_id)} onChange={v => edit('material_id', v)} />
           </Card>
 
           <Card className="overflow-hidden">

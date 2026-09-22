@@ -80,7 +80,11 @@ A light, jargon-free four-step flow:
    passes) or send changes. Responses land in the Studio inbox, where adjustments apply to
    the design in one click or go to Stage 7.
 
-Without a link, `/customer` is a short request form that also lands in the inbox. What
+Without a link, `/customer` is a **configurator**: the customer picks a part, enters their
+line (machine, speed, container size, material, rotation), shapes the part in the same 3D
+editor with live checks, undo/redo and *More dimensions*, and sends the finished design.
+It lands in the Studio inbox, where *Open their design* loads it straight into the design
+panel. What
 crosses to the customer is an explicit allowlist — cost, tolerances, scores and rankings
 never do.
 
@@ -153,7 +157,7 @@ stage*_*.ipynb            per-stage model comparison notebooks
 python -m pytest test_stage5_validation.py -q    # Python engine, 23 tests
 cd app
 npm test                                         # engine mirror + chaining, 21 tests
-npm run e2e                                      # browser suite against :8765, 54 checks
+npm run e2e                                      # browser suite against :8765, 63 checks
 E2E_LLM=1 npm run e2e                            # + a real Stage 1 call on local Ollama
 ```
 
@@ -161,4 +165,5 @@ The browser suite drives real Chrome against both products: live verdicts and th
 Python cross-check, part switching, prompt edits surviving a reload, viewer tools,
 the command palette and CAD workspace, the publish allowlist, the full customer
 flow including undo and the response reaching the backend, phone-width layout, the
-request form and the inbox. It backs up and restores `data/store.json`.
+configurator (part switching, live checks, refresh-safe state, the design reaching the
+inbox) and loading a customer design into the Studio. It backs up and restores `data/store.json`.
