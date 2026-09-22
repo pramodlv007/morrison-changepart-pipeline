@@ -15,8 +15,8 @@ Stages 1–4 and the customer page before writing any physics.
 | Stage 1 extraction fields, Stage 3 branch fields, Stage 4 CadQuery strategy + static checks, sample customer emails, sliders, customer-facing dimension labels | `parts/registry.json` or `parts/<name>.part.json` | **No** |
 | Precedent library used by Stage 2 retrieval (the RAG corpus) | same file, `precedents[]` | **No** |
 | Standards, machine ratings, material limits, thresholds | `validation_standards.json` | **No** |
-| Stage 5 physics (what makes this part *safe*) | `stage5_engine.py` + the mirror in `pipeline_dashboard.html` | Yes |
-| 3D mesh + 2D drawing | `pipeline_dashboard.html` (and `customer.html` for the customer 3D preview) | Yes |
+| Stage 5 physics (what makes this part *safe*) | `stage5_engine.py` + the mirror in `app/src/core/validate.ts` | Yes |
+| 3D mesh, drag handles, 2D drawing | `app/src/cad/geometry.ts` and `app/src/cad/drawing.ts` (shared by Studio and Design Review) | Yes |
 
 ---
 
@@ -65,10 +65,10 @@ clean and a new part is one self-contained file.
 }
 ```
 
-Restart `serve.py` and reload the dashboard. You now get: Stage 1 classifying
+Restart `serve.py` and reload the Studio. You now get: Stage 1 classifying
 into `gripper`, a Stage 5 part-type dropdown entry, viewer sliders, Stage 3
 branch fields, Stage 4 generation with your strategy and static checks, Stage 2
-retrieval over *your* precedents, and a customer page that names the part in
+retrieval over *your* precedents, and a Design Review page that names the part in
 plain language.
 
 **Precedents are the RAG corpus.** Stage 2 embeds the query and each precedent
@@ -87,37 +87,38 @@ numbers:
 "gripper_thresholds": {
   "min_neck_grip_ratio": 0.30,
   "max_jaw_pressure_n": 25.0,
-  "reference_source": "Morrison Gripper Design Standard GJ-DS-01"
+  "reference_source": "Gripper Design Standard GJ-DS-01"
 }
 ```
 
 ## Step 3 — write the physics (code)
 
-Until this exists the part flows through the pipeline but **Stage 5 falls back
-to the starwheel validator**, which will produce nonsense. Add:
+Until this exists the part flows through the pipeline but Stage 5 reports it as
+**UNVALIDATED** and the customer cannot approve it. Add:
 
 1. `validate_gripper(branch_id, params, ovality_mm)` in `stage5_engine.py`,
    following `validate_feed_screw` — return `{part_type, verdict, checks,
    computed, citations, reasons|weighted_score}` and cite the standard on every
    failure.
 2. Register it in `validate_change_part`'s dispatch.
-3. Mirror it in `pipeline_dashboard.html` as `validateGripper(p)` plus a branch
-   in `validateDesign`, `scoreTiles` and `formulasFor`.
+3. Mirror it in `app/src/core/validate.ts` as `gripper(d)` returning checks (with
+   `plain`/`plainReason` customer wording), formulas and tiles; add it to
+   `IMPLEMENTED_PARTS` in `registry.ts` and to the `validateDesign` dispatch.
+   Add repair hints for each check id in `app/src/core/repair.ts`.
 4. Tests in `test_stage5_validation.py`: one reference **accept** with numbers
    you can defend, and one **reject** per rule.
 
-The browser and Python engines must agree — the Stage 5 panel's
-*"cross-check with Python engine"* button compares them live.
+The browser and Python engines must agree — every Stage 5 run in the Studio
+compares them and flags a mismatch.
 
 ## Step 4 — geometry (code)
 
 1. `build_gripper_solid(params)` in `stage5_engine.py` using CadQuery — this is
    what `/api/step` exports, and it is **never** model-generated code.
-2. `buildGripper(g, P, C)` in `pipeline_dashboard.html` returning the model's
-   extent (used to frame the camera), and a branch in `bldW()`.
-3. A branch in `svg2D()` for the dimensioned drawing.
-4. Optionally mirror the mesh in `customer.html`'s `build3D()` so the customer
-   sees 3D rather than only the drawing.
+2. A `gripper(d)` builder in `app/src/cad/geometry.ts` returning the group, hotspot
+   anchors and extent, plus entries in `handlesFor()` for direct manipulation.
+3. A branch in `drawingSvg()` in `app/src/cad/drawing.ts`.
+4. Optionally a feature-tree entry in `FEATURES` (`app/src/studio/DesignPanel.tsx`).
 
 > Verify new CadQuery strategies against the real kernel before trusting them.
 > `twistExtrude` looks right for a helical screw flight but only rotates the end
@@ -132,7 +133,7 @@ The browser and Python engines must agree — the Stage 5 panel's
 - [ ] At least two precedents, including one `jammed`, so outcome-weighting is exercised
 - [ ] Thresholds and citations in `validation_standards.json`
 - [ ] `validate_<name>` in `stage5_engine.py` + dispatch entry
-- [ ] Mirror validator in `pipeline_dashboard.html` (+ `scoreTiles`, `formulasFor`)
-- [ ] `build_<name>_solid` in `stage5_engine.py`; `build<Name>` + `svg2D` branch in the dashboard
+- [ ] Mirror validator in `app/src/core/validate.ts` + repair hints + `IMPLEMENTED_PARTS`
+- [ ] `build_<name>_solid` in `stage5_engine.py`; builder + handles in `geometry.ts`; drawing branch
 - [ ] Tests: one accept, one reject per rule; `python -m pytest test_stage5_validation.py`
-- [ ] Cross-check the browser and Python verdicts agree in the Stage 5 panel
+- [ ] Browser and Python verdicts agree (Stage 5 run notes), `npm test` and `npm run e2e` pass

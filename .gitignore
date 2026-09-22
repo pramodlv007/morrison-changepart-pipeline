@@ -1,8 +1,11 @@
-__pycache__/
 *.pyc
-.ipynb_checkpoints/
-node_modules/
 *.step
-output.step
+.ipynb_checkpoints/
 .pytest_cache/
-package-lock.json
+__pycache__/
+app/dist/
+app/node_modules/
+data/
+/node_modules/
+output.step
+/package-lock.json

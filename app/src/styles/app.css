@@ -1,0 +1,139 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss";
+
+/*
+ * Design tokens. Two themes share one semantic vocabulary so every component works in both:
+ *   .theme-studio  — "Graphite": dark-first, dense, one indigo accent (engineers)
+ *   .theme-portal  — "Porcelain": light, vibrant indigo/violet/cyan, generous (customers)
+ * Components only ever reference semantic tokens, never raw colours.
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+}
+
+.theme-studio {
+  color-scheme: dark;
+  --bg: #0b0d12;
+  --surface: #11141b;
+  --surface-2: #171b24;
+  --surface-3: #1e2330;
+  --border: #232838;
+  --border-strong: #323a50;
+  --ink: #e8ebf2;
+  --ink-2: #9aa3b8;
+  --ink-3: #636d86;
+  --accent: #7c8bff;
+  --accent-2: #a78bfa;
+  --accent-3: #2dd4bf;
+  --accent-soft: rgb(124 139 255 / .14);
+  --on-accent: #0b0d12;
+  --success: #34d399;
+  --success-soft: rgb(52 211 153 / .13);
+  --warning: #fbbf24;
+  --warning-soft: rgb(251 191 36 / .13);
+  --danger: #fb7185;
+  --danger-soft: rgb(251 113 133 / .13);
+  --shadow: 0 1px 0 rgb(255 255 255 / .03) inset, 0 12px 32px -12px rgb(0 0 0 / .6);
+  --viewport-bg: radial-gradient(120% 90% at 50% 0%, #161c2e 0%, #0a0d14 72%);
+}
+
+.theme-portal {
+  color-scheme: light;
+  --bg: #f5f6fb;
+  --surface: #ffffff;
+  --surface-2: #f1f3f9;
+  --surface-3: #e8ebf4;
+  --border: #e3e6ef;
+  --border-strong: #cfd4e2;
+  --ink: #0e1330;
+  --ink-2: #4a5270;
+  --ink-3: #7d849e;
+  --accent: #5046e5;
+  --accent-2: #8b5cf6;
+  --accent-3: #06b6d4;
+  --accent-soft: rgb(80 70 229 / .09);
+  --on-accent: #ffffff;
+  --success: #0e9f6e;
+  --success-soft: rgb(16 185 129 / .12);
+  --warning: #d97706;
+  --warning-soft: rgb(245 158 11 / .14);
+  --danger: #e11d48;
+  --danger-soft: rgb(225 29 72 / .10);
+  --shadow: 0 1px 2px rgb(14 19 48 / .05), 0 10px 30px -12px rgb(14 19 48 / .14);
+  --viewport-bg: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #eef0f8 70%);
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  /* The portal has a sticky header and a fixed action bar: keep focused/scrolled-to content clear of both. */
+  html.theme-portal { scroll-padding-top: 84px; scroll-padding-bottom: 96px; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Every measurement lines up in columns. */
+  .num, input[type=number] { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: var(--accent-soft); }
+  * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+}
+
+@layer utilities {
+  .shadow-card { box-shadow: var(--shadow); }
+  .bg-viewport { background: var(--viewport-bg); }
+  .text-gradient {
+    background: linear-gradient(120deg, var(--accent) 10%, var(--accent-2) 60%, var(--accent-3));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .bg-gradient-accent { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+}
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.animate-in { animation: fade-up .22s var(--ease-out) both; }
+.animate-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+  background-size: 800px 100%; animation: shimmer 1.3s linear infinite; border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}

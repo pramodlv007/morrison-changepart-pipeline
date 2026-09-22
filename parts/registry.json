@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "description": "Change-part registry consumed by pipeline_dashboard.html (via /api/registry when served by serve.py, otherwise the embedded copy) and by serve.py. Adding a part type here gives it a Stage 1 schema, Stage 3 branch fields, Stage 4 CadQuery strategy + static checks, sample customer requests and a precedent (RAG) library. Physics validators and 3D/2D geometry live in code — see docs/ADDING_A_PART.md.",
+  "description": "Change-part registry consumed by the Studio and Design Review (bundled, and served merged with overlays at /api/registry) and by serve.py. Adding a part type here gives it a Stage 1 schema, Stage 3 branch fields, Stage 4 CadQuery strategy + static checks, sample customer requests and a precedent (RAG) library. Physics validators and 3D/2D geometry live in code — see docs/ADDING_A_PART.md.",
   "container_defaults": {
     "filled_mass_kg": 0.55,
     "friction_coefficient": 0.25,
